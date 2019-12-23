@@ -51,7 +51,7 @@ __inline void ZPC_SetData(uint8_t data)
     PORTA = data;
 }
 
-__inline uint8_t ZPC_GetData(uint8_t data)
+__inline uint8_t ZPC_GetData()
 {
     return PINA;
 }

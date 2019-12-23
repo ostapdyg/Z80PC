@@ -1,7 +1,7 @@
 #ifndef ZPC_FUNCS_PROTO
 #define ZPC_FUNCS_PROTO
 
-int8_t __reverse(uint8_t reversee);
+uint8_t __reverse(uint8_t reversee);
 
 void ZPC_AddressSetOutput(void);
 
@@ -13,7 +13,7 @@ void ZPC_DataSetInputPulup(void);
 
 void ZPC_SetData(uint8_t data);
 
-uint8_t ZPC_GetData(uint8_t data);
+uint8_t ZPC_GetData();
 
 void ZPC_SetAddress(uint16_t address);
 
