@@ -1,3 +1,6 @@
+#ifndef ZPC_PINOUT
+#define ZPC_PINOUT
+
 #define D0 22 // PA0 pin 40   Z80 data bus
 #define D1 23 // PA1 pin 39
 #define D2 24 // PA2 pin 38
@@ -47,4 +50,6 @@
 #define WAIT_RES_ 47 // PB0 pin 1    Internal control line
 
 #define USER 13
+
+#endif
 

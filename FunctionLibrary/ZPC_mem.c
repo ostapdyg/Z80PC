@@ -1,5 +1,6 @@
 #include "Arduino.h"
-#include "pinout.h"
+#include "ZPC_pinout.h"
+#include "ZPC_funcs.h"
 
 __inline uint8_t __reverse(uint8_t reversee)
 {
