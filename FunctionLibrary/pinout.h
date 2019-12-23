@@ -7,22 +7,29 @@
 #define D6 28 // PA6 pin 34
 #define D7 29 // PA7 pin 33
 
-#define AD0 30  // PC7 pin 24   Z80 address bus (AD0-AD8 = A0-A8 on A04113 schematic)
-#define AD1 31  // PC6 pin 25
-#define AD2 32  // PC5 pin 26
-#define AD3 33  // PC4 pin 27
-#define AD4 34  // PC3 pin 28
-#define AD5 35  // PC2 pin 29
-#define AD6 36  // PC1 pin 16
-#define AD7 37  // PC0 pin 17
-#define AD8 38  // PD7 pin 18
-#define AD9 39  // PG2 pin 18
-#define AD10 40 // PG1 pin 18
-#define AD11 41 // PG0 pin 18
-#define AD12 42 // PL7 pin 18
-#define AD13 43 // PL6 pin 18
-#define AD14 44 // PL5 pin 18
-#define AD15 45 // PL4 pin 18
+#define AD0 30  // PC7 Z80 address bus (AD0-AD8 = A0-A8 on A04113 schematic)
+#define AD1 31  // PC6
+#define AD2 32  // PC5
+#define AD3 33  // PC4
+#define AD4 34  // PC3
+#define AD5 35  // PC2
+#define AD6 36  // PC1
+#define AD7 37  // PC0
+#define AD8 38  // PD7
+#define AD9 39  // PG2
+#define AD10 40 // PG1
+#define AD11 41 // PG0
+#define AD12 42 // PL7
+#define AD13 43 // PL6
+#define AD14 44 // PL5
+#define AD15 45 // PL4
+
+#define AD_PORTC_BITMASK B11111111
+#define AD_PORTD_BITMASK B10000000
+#define AD_PORTG_BITMASK B00000111
+#define AD_PORTL_BITMASK B11110000
+
+
 
 #define INT_ 48    // PB1 pin 2    Z80 control bus
 #define BUSACK_ 51 // PB2 pin 3
@@ -40,3 +47,4 @@
 #define WAIT_RES_ 47 // PB0 pin 1    Internal control line
 
 #define USER 13
+
