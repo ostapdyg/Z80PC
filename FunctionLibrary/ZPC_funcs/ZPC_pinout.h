@@ -1,7 +1,8 @@
 #ifndef ZPC_PINOUT
 #define ZPC_PINOUT
 
-#define D0 22 // PA0 pin 40   Z80 data bus
+//Z80 data bus
+#define D0 22 // PA0 pin 40
 #define D1 23 // PA1 pin 39
 #define D2 24 // PA2 pin 38
 #define D3 25 // PA3 pin 37
@@ -10,7 +11,8 @@
 #define D6 28 // PA6 pin 34
 #define D7 29 // PA7 pin 33
 
-#define AD0 30  // PC7 Z80 address bus (AD0-AD8 = A0-A8 on A04113 schematic)
+//Z80 address bus
+#define AD0 30  // PC7 
 #define AD1 31  // PC6
 #define AD2 32  // PC5
 #define AD3 33  // PC4
