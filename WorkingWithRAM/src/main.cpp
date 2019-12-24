@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "ZPC_funcs.h"
-#include "ZPC_pinout.h"
 
 
 // #define D0 22 // PA0 pin 40   Z80 data bus
@@ -67,18 +66,18 @@ void setup()
   ZPC_ArduinoInit();
 
   uint16_t address = 0x00;
-  uint8_t data = 0x11;
+  // uint8_t data = 0x11;
   for(uint16_t i=0; i< 80; i++){
     ZPC_MemWrite(address+i, program[i]);
   }
 
   for(uint16_t i=0; i< 80; i++){
     uint8_t read_data = ZPC_MemRead(address+i);
-    //sprintf(s, "%x ", read_data); //Should be equal to data
-    //Serial.print(s);
+    sprintf(s, "%x ", read_data); //Should be equal to data
+    Serial.print(s);
   }
 
-  //ZPC_AddressSetInputPullup();
+  ZPC_AddressSetInputPullup();
   ZPC_DataSetInputPullup();
 
   digitalWrite(RESET_, LOW);
@@ -101,7 +100,7 @@ void loop()
   delay(1);
   digitalWrite(CLK, LOW);
   Serial.print(s);
-  //sprintf(s, "Data: %x \n", ZPC_GetData());
+  sprintf(s, "Data: %x \n", ZPC_GetData());
   delay(1000);
   
 }
