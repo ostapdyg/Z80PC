@@ -1,5 +1,5 @@
-#ifndef ZPC_PINOUT
-#define ZPC_PINOUT
+// #ifndef ZPC_PINOUT
+// #define ZPC_PINOUT
 
 #define D0 22 // PA0 pin 40   Z80 data bus
 #define D1 23 // PA1 pin 39
@@ -51,5 +51,5 @@
 
 #define USER 13
 
-#endif
+// #endif
 

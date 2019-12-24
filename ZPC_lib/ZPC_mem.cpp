@@ -1,6 +1,7 @@
 #include "Arduino.h"
-#include "ZPC_pinout.h"
-#include "ZPC_funcs.h"
+#include "ZPC_lib.h"
+// #include "ZPC_pinout.h"
+// #include "ZPC_funcs.h"
 
 __inline uint8_t __reverse(uint8_t reversee)
 {
@@ -13,7 +14,7 @@ __inline uint8_t __reverse(uint8_t reversee)
     return reverse;
 }
 
-__inline void ZPC_AddressSetOutput(void)
+void ZPC_AddressSetOutput(void)
 {
     DDRC |= AD_PORTC_BITMASK; // Configure Z80 address bus A0-A7 (PC0-PC7) as output
     DDRD |= AD_PORTD_BITMASK; // Configure Z80 address bus A8 (PD7) as output
@@ -21,7 +22,7 @@ __inline void ZPC_AddressSetOutput(void)
     DDRL |= AD_PORTL_BITMASK; // Configure Z80 address bus A12-A15 (PL4-PL7) as output
 }
 
-__inline void ZPC_AddressSetInputPulup(void)
+void ZPC_AddressSetInputPullup(void)
 {
     DDRC &= ~AD_PORTC_BITMASK; // A0-A7 (PC0-PC7) as output
     DDRD &= ~AD_PORTD_BITMASK; // A8 (PD7) as output
@@ -34,24 +35,24 @@ __inline void ZPC_AddressSetInputPulup(void)
     PORTL |= AD_PORTL_BITMASK; // (PL4-PL7) as pullup
 }
 
-__inline void ZPC_DataSetOutput(void)
+void ZPC_DataSetOutput(void)
 {
     DDRA = 0xFF;
 }
 
-__inline void ZPC_DataSetInputPulup(void)
+void ZPC_DataSetInputPullup(void)
 {
     DDRA = 0x00;
     PORTA = 0xFF;
 }
 
-__inline void ZPC_SetData(uint8_t data)
+void ZPC_SetData(uint8_t data)
 {
     ZPC_DataSetOutput();
     PORTA = data;
 }
 
-__inline uint8_t ZPC_GetData()
+uint8_t ZPC_GetData()
 {
     return PINA;
 }
@@ -59,7 +60,7 @@ __inline uint8_t ZPC_GetData()
 
 void ZPC_SetAddress(uint16_t address)
 {
-    uint16_t reversed_address = _reverse(address);
+    uint16_t reversed_address = __reverse(address);
     //reversed_address: C7 C6 C5 C4 C3 C2 C1 C0 D7 G2 G1 G0 L7 L6 L5 L4
     ZPC_AddressSetOutput();
 
@@ -89,7 +90,7 @@ uint16_t ZPC_GetAddress()
 
     reversed_address |= ((PINL & AD_PORTL_BITMASK) >> 4);
 
-    return __reversed(reversed_address);
+    return __reverse(reversed_address);
 }
 
 
@@ -111,12 +112,12 @@ uint8_t ZPC_MemRead(uint16_t address)
 
     ZPC_SetAddress(address);
 
-    ZPC_DataSetInputPulup();
+    ZPC_DataSetInputPullup();
 
     digitalWrite(MREQ_, LOW);
     digitalWrite(RD_, LOW);
 
-    uint8_t read_data = ZPC_GetData();
+    read_data = ZPC_GetData();
 
     digitalWrite(RD_, HIGH);
     digitalWrite(MREQ_, HIGH);
