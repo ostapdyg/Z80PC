@@ -1,9 +1,18 @@
 #include "Arduino.h"
 #include <stdio.h>
 
-#include "ZPC_funcs.h"
-#include "ZPC_pinout.h"
+//#include "../../ZPC_lib/ZPC_lib.h"
+// #include "../../ZPC_lib/ZPC_funcs.h"
+// #include "../../ZPC_lib/ZPC_pinout.h"
+// #include "../../ZPC_lib/ZPC_mem.c"
+// #include "../../ZPC_lib/ZPC_setup.c"
 
+#include "../../ZPC_lib/ZPC_lib.h"
+//#include "ZPC_lib.h"
+//#include "ZPC_funcs.h"
+//#include "ZPC_pinout.h"
+//#include "ZPC_mem.c"
+//#include "ZPC_setup.c"
 
 // #define D0 22 // PA0 pin 40   Z80 data bus
 // #define D1 23 // PA1 pin 39
@@ -48,6 +57,7 @@
 
 // #define USER 13
 
+
 uint8_t program[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -74,11 +84,11 @@ void setup()
 
   for(uint16_t i=0; i< 80; i++){
     uint8_t read_data = ZPC_MemRead(address+i);
-    //sprintf(s, "%x ", read_data); //Should be equal to data
-    //Serial.print(s);
+    sprintf(s, "%x ", read_data); //Should be equal to data
+    Serial.print(s);
   }
 
-  //ZPC_AddressSetInputPullup();
+  ZPC_AddressSetInputPullup();
   ZPC_DataSetInputPullup();
 
   digitalWrite(RESET_, LOW);
@@ -95,13 +105,14 @@ void setup()
 
 void loop() 
 {
+  
   char s[30];
   digitalWrite(CLK, HIGH);
-  sprintf(s, "Address : %x ", ZPC_GetAddress());
+  sprintf(s, "Address : %x\n ", ZPC_GetAddress());
   delay(1);
   digitalWrite(CLK, LOW);
   Serial.print(s);
-  //sprintf(s, "Data: %x \n", ZPC_GetData());
+  sprintf(s, "Data: %x \n", ZPC_GetData());
   delay(1000);
   
 }
