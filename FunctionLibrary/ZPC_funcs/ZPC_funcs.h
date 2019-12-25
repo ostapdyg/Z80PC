@@ -3,8 +3,14 @@
 #include "ZPC_pinout.h"
 
 
-//Return a reversed byte
-uint8_t __reverse(uint8_t reversee);
+//Return a reversed binary data
+uint16_t __reverse(uint16_t reversee, uint8_t bitcount);
+
+//Return a reversed uint8
+#define __reverse8(x) __reverse(x, 8)
+
+//Return a reversed uint16
+#define __reverse16(x) __reverse(x, 16)
 
 //Set Arduino address pins to output
 void ZPC_AddressSetOutput(void);

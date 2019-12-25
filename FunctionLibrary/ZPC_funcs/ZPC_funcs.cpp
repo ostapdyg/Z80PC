@@ -2,10 +2,11 @@
 
 #include "ZPC_funcs.h"
 
-__inline uint8_t __reverse(uint8_t reversee)
+
+__inline uint16_t __reverse(uint16_t reversee, uint8_t bitcount)
 {
-    uint8_t bitcount = 8;
-    uint8_t reverse = 0, i;
+    uint8_t i;
+    uint16_t reverse = 0;
     for (i = 0; i < bitcount; i++)
     {
         reverse |= (((reversee >> i) & 1) << (bitcount - 1 - i));
@@ -13,9 +14,14 @@ __inline uint8_t __reverse(uint8_t reversee)
     return reverse;
 }
 
-uint16_t __reverse16(uint16_t reversee){
-    return (__reverse(reversee)<<8)+(__reverse(reversee>>8));
-}
+// __inline uint8_t __reverse8(uint8_t reversee)
+// {
+//     return __reverse(reversee, 8);
+// }
+
+// __inline uint16_t __reverse16(uint16_t reversee){
+//     return __reverse(reversee, 16);
+// }
 
 void ZPC_AddressSetOutput(void)
 {
