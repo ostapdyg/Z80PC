@@ -13,6 +13,10 @@ __inline uint8_t __reverse(uint8_t reversee)
     return reverse;
 }
 
+uint16_t __reverse16(uint16_t reversee){
+    return (__reverse(reversee)<<8)+(__reverse(reversee>>8));
+}
+
 void ZPC_AddressSetOutput(void)
 {
     DDRC |= AD_PORTC_BITMASK; // Configure Z80 address bus A0-A7 (PC0-PC7) as output
@@ -59,7 +63,7 @@ uint8_t ZPC_GetData()
 
 void ZPC_SetAddress(uint16_t address)
 {
-    uint16_t reversed_address = __reverse(address);
+    uint16_t reversed_address = __reverse16(address);
     //reversed_address: C7 C6 C5 C4 C3 C2 C1 C0 D7 G2 G1 G0 L7 L6 L5 L4
     ZPC_AddressSetOutput();
 
@@ -89,7 +93,7 @@ uint16_t ZPC_GetAddress()
 
     reversed_address |= ((PINL & AD_PORTL_BITMASK) >> 4);
 
-    return __reverse(reversed_address);
+    return __reverse16(reversed_address);
 }
 
 
