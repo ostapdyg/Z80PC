@@ -138,6 +138,9 @@ void ZPC_ArduinoInit()
     digitalWrite(RESET_, LOW);
     digitalWrite(WAIT_RES_, LOW);
 
+    ZPC_AddressSetInputPullup();
+    ZPC_DataSetInputPullup();
+
     pinMode(INT_, INPUT_PULLUP);
     pinMode(INT_, OUTPUT);
     digitalWrite(INT_, HIGH);
@@ -148,3 +151,4 @@ void ZPC_ArduinoInit()
     pinMode(BUSREQ_, OUTPUT);
     digitalWrite(BUSREQ_, HIGH);
 }
+
