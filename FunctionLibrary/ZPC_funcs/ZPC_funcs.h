@@ -45,4 +45,8 @@ uint8_t ZPC_MemRead(uint16_t address);
 //Initialize Z80 control pins
 void ZPC_ArduinoInit(void);
 
+
+//Set data and addresses to intput and start the processor
+void ZPC_ProcStart(void);
+
 #endif

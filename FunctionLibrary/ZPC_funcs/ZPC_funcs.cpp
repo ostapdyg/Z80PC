@@ -35,18 +35,19 @@ void ZPC_AddressSetInputPullup(void)
 {
     DDRC &= ~AD_PORTC_BITMASK; // A0-A7 (PC0-PC7) as output
     DDRD &= ~AD_PORTD_BITMASK; // A8 (PD7) as output
-    DDRG &= ~AD_PORTG_BITMASK; // (PG0-PG2) as output
-    DDRL &= ~AD_PORTL_BITMASK; // (PL4-PL7) as output
+    DDRG &= ~AD_PORTG_BITMASK; // A9-A11 (PG0-PG2) as output
+    DDRL &= ~AD_PORTL_BITMASK; // A12-A15(PL4-PL7) as output
 
     PORTC |= AD_PORTC_BITMASK; // A0-A7 (PC0-PC7) as pullup
     PORTD |= AD_PORTD_BITMASK; // A8 (PD7) as pullup
-    PORTG |= AD_PORTG_BITMASK; // (PG0-PG2) as pullup
-    PORTL |= AD_PORTL_BITMASK; // (PL4-PL7) as pullup
+    PORTG |= AD_PORTG_BITMASK; // A9-A11 (PG0-PG2) as pullup
+    PORTL |= AD_PORTL_BITMASK; // A12-A15 (PL4-PL7) as pullup
 }
 
 void ZPC_DataSetOutput(void)
 {
     DDRA = 0xFF;
+    //PORTA = 0x00;
 }
 
 void ZPC_DataSetInputPullup(void)
@@ -88,7 +89,7 @@ void ZPC_SetAddress(uint16_t address)
 
 uint16_t ZPC_GetAddress()
 {
-    uint16_t reversed_address = 0x00;
+    uint16_t reversed_address = 0x0000;
     //reversed_address: C7 C6 C5 C4 C3 C2 C1 C0 D7 G2 G1 G0 L7 L6 L5 L4
 
     reversed_address |= ((PINC & AD_PORTC_BITMASK) << 8);
@@ -137,15 +138,18 @@ void ZPC_ArduinoInit()
 {
     //TODO: Implement this function
     pinMode(WR_, OUTPUT);
-    pinMode(MREQ_, OUTPUT);
-    pinMode(RD_, OUTPUT);
-    pinMode(RESET_, OUTPUT);
-    pinMode(WAIT_RES_, OUTPUT);
-
     digitalWrite(WR_, HIGH);
+
+    pinMode(MREQ_, OUTPUT);
     digitalWrite(MREQ_, HIGH);
+    
+    pinMode(RD_, OUTPUT);
     digitalWrite(RD_, HIGH);
-    digitalWrite(RESET_, LOW);
+    
+    pinMode(RESET_, OUTPUT);
+    digitalWrite(RESET_, HIGH);
+
+    pinMode(WAIT_RES_, OUTPUT);
     digitalWrite(WAIT_RES_, LOW);
 
     ZPC_AddressSetInputPullup();
@@ -162,3 +166,26 @@ void ZPC_ArduinoInit()
     digitalWrite(BUSREQ_, HIGH);
 }
 
+void ZPC_ProcStart(){
+  ZPC_AddressSetInputPullup();
+  ZPC_DataSetInputPullup();
+  pinMode(MREQ_, INPUT);                   // Configure MREQ_ as input with pull-up
+  pinMode(RD_, INPUT);                     // Configure RD_ as input with pull-up
+  pinMode(WR_, INPUT);
+  digitalWrite(WAIT_RES_, LOW);            //Set the RS trigger
+  // digitalWrite(WAIT_RES_, HIGH);
+
+  pinMode(BUSREQ_, OUTPUT);
+  digitalWrite(BUSREQ_, HIGH);
+  
+
+
+  //Reset 1-0-1 pulse for at least 4 CLK ticks
+  digitalWrite(RESET_, LOW);
+  for(uint8_t i=0; i<=10; i++){
+    digitalWrite(CLK, HIGH);
+    digitalWrite(CLK, LOW);
+  }
+  digitalWrite(RESET_, HIGH);
+
+}
