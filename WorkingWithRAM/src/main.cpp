@@ -3,7 +3,7 @@
 
 #include "ZPC_funcs.h"
 
-#define program program_JMP
+#define program program_HALT
 
 uint8_t program_HALT[] = {0x00, 0x76, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -14,7 +14,7 @@ uint8_t program_HALT[] = {0x00, 0x76, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-uint8_t program_JMP[] = {0x00, 0x00, 0xc3, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+uint8_t program_JMP[] = {0x00, 0x00, 0xc3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -33,7 +33,6 @@ void setup()
   ZPC_ArduinoInit();
   
   uint16_t address = 0x00;
-  // uint8_t data = 0x11;
   for(uint16_t i=0; i< 80; i++){
     ZPC_MemWrite(address+i, program[i]);
   }
@@ -44,24 +43,8 @@ void setup()
     Serial.print(s);
   }
   pinMode(CLK, OUTPUT);
-  // ZPC_AddressSetInputPullup();
-  // ZPC_DataSetInputPullup();
-  // pinMode(MREQ_, INPUT);                   // Configure MREQ_ as input with pull-up
-  // pinMode(RD_, INPUT);                     // Configure RD_ as input with pull-up
-  // pinMode(WR_, INPUT);
+  Serial.print("\n");
 
-  // //Set the RS trigger
-  // digitalWrite(WAIT_RES_, LOW);
-  // // digitalWrite(WAIT_RES_, HIGH);
-
-
-  // //Reset has to be low for at least 4 CLK ticks
-  // digitalWrite(RESET_, LOW);
-  // for(uint8_t i=0; i<=10; i++){
-  //   digitalWrite(CLK, HIGH);
-  //   digitalWrite(CLK, LOW);
-  // }
-  // digitalWrite(RESET_, HIGH);
   ZPC_ProcStart();
 }
 char s[30];
@@ -79,6 +62,6 @@ void loop()
   }
   sprintf(s, "Address : %04x Data: %x \n", ZPC_GetAddress(), ZPC_GetData());
   Serial.print(s);
-  delay(500);
+  delay(1000);
 
 }
