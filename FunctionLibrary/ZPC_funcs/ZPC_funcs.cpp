@@ -176,7 +176,7 @@ void ZPC_ProcStart(){
   pinMode(RD_, INPUT);                     // Configure RD_ as input with pull-up
   pinMode(WR_, INPUT);
   digitalWrite(WAIT_RES_, LOW);            //Set the RS trigger
-  // digitalWrite(WAIT_RES_, HIGH);
+  digitalWrite(WAIT_RES_, HIGH);
 
   pinMode(BUSREQ_, OUTPUT);
   digitalWrite(BUSREQ_, HIGH);
