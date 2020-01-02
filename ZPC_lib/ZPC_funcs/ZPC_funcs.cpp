@@ -14,14 +14,6 @@ __inline uint16_t __reverse(uint16_t reversee, uint8_t bitcount)
     return reverse;
 }
 
-// __inline uint8_t __reverse8(uint8_t reversee)
-// {
-//     return __reverse(reversee, 8);
-// }
-
-// __inline uint16_t __reverse16(uint16_t reversee){
-//     return __reverse(reversee, 16);
-// }
 
 void ZPC_AddressSetOutput(void)
 {
