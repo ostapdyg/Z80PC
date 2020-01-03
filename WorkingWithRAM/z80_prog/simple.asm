@@ -6,7 +6,7 @@ main:
 
     ld  a, 5 ;set accumulator to 5
     add 10
-    out (3), a
+    ld (100), a
     jp main
 
 
