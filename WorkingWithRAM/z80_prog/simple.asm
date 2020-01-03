@@ -5,9 +5,10 @@
 main:   
 
     ld  a, 5 ;set accumulator to 5
+loop:
     add 10
-    ld (100), a
-    jp main
+    out (100), a
+    jp loop
 
 
     outend     

@@ -5,8 +5,7 @@ import sys
 
 def assemblify(filename, asm="sjasmplus"):
     
-    os.system(f"{asm} {filename}")
-    os.system(f"{asm} {filename} -lst")
+    os.system(f"{asm} {filename} --lst")
 
     
 
@@ -28,8 +27,8 @@ def jinjify(hexcode):
         loader=jinja2.FileSystemLoader(os.path.abspath('.'))
     )
     
-    template = jinja_env.get_template('program_template.h')
-    new_file = template.render(array=hexcode)
+    template = jinja_env.get_template('program_template.txt')
+    new_file = template.render(array=hexcode, size=hexcode.count(",")+1)
     #print(new_file)
     with open("program.h", "w") as f:
         
@@ -47,5 +46,9 @@ if __name__ == "__main__":
     # result = hexify("simple.bin")
     # print(result)
     # jinjify(result)
-    os.chdir(os.path.abspath(sys.argv[2] if len(sys.argv) >= 3 else "."))
+    # os.chdir(os.path.abspath(sys.argv[2] if len(sys.argv) >= 3 else "."))
     main()
+    os.chdir("../")
+    os.system("platformio run")
+    os.system("platformio run --target upload")
+    os.system("platformio device monitor")

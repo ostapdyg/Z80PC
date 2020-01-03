@@ -5,7 +5,6 @@
 #include "../z80_prog/program.h"
 
 #define program program_CUSTOM
-#define PROG_SIZE 0x54
 
 uint8_t program_TEMPLATE[] = {
   0x00, 0x00, 0x00, 0x00, //0x00
@@ -116,27 +115,23 @@ void loop()
   digitalWrite(CLK, LOW);
   //delay(500);
   digitalWrite(CLK, HIGH);
-  if(!digitalRead(WAIT_))
-  {
-    IO = 1;
-    digitalWrite(WAIT_RES_, LOW);
-    // delay(1);
-    // digitalWrite(WAIT_RES_, HIGH);
-  }
-  else{
-  if(!digitalRead(WR_)){
-    W = 1;
-  }
-  else if(!digitalRead(RD_)){
-    R = 1;
-  }}
-  if(W|R|IO){
-    if(IO){Serial.print("IO");}
+  IO = !digitalRead(WAIT_);
+  W = !digitalRead(WR_);
+  R = !digitalRead(RD_);
+
+  if(IO&(W|R)){
+    if(IO){Serial.print("IO ");}
     if(W){Serial.print("Write ");}
     if(R){Serial.print("Read ");}
     sprintf(s, "Address : %04x Data: %02x \n", ZPC_GetAddress(), ZPC_GetData());
     Serial.print(s);
+    if(IO){
+      digitalWrite(WAIT_RES_, LOW);
+      digitalWrite(CLK, LOW);
+      digitalWrite(CLK, HIGH);
+      digitalWrite(WAIT_RES_, HIGH);
+    }
   }
-  delay(1);
+  delay(100);
 
 }
