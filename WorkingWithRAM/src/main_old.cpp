@@ -75,9 +75,7 @@ uint8_t program_IO[] = {
   0xd3, 0x12, 0x00, 0x00
 };
 
-uint8_t program_CUSTOM[] = {
-  %!! array !!%
-};
+
 void setup()
 {
 
