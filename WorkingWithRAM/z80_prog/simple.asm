@@ -2,13 +2,21 @@
     org 0x0000  
     jp main
 
+
+
+
+
 main:   
 
-    ld  a, 5 ;set accumulator to 5
 loop:
-    add 1
-    in a, (0x10)
-    out (0x10), a
+    ld a, "a"
+    ld bc, 0x0101
+    out (c), a
+    ld a, "c"
+    in a, (c)
+    ld bc, 0x1000
+    out (c), a
+
     jp loop
 
 
