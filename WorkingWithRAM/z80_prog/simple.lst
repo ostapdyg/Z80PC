@@ -1,0 +1,17 @@
+# file opened: simple.asm
+ 1    0000                  output "simple.bin", t
+ 2    0000                  org 0x0000
+ 3    0000 C3 03 00         jp main
+ 4    0003
+ 5    0003              main:
+ 6    0003
+ 7    0003 3E 05            ld  a, 5 ;set accumulator to 5
+ 8    0005              loop:
+ 9    0005 C6 01            add 1
+10    0007 DB 10            in a, (0x10)
+11    0009 D3 10            out (0x10), a
+12    000B C3 05 00         jp loop
+13    000E
+14    000E
+15    000E                  outend
+# file closed: simple.asm

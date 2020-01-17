@@ -39,7 +39,11 @@ def main():
     #print(f"{sys.argv[1]}")
     assemblify(f"{sys.argv[1]}.asm")
     jinjify(hexify(f"{sys.argv[1]}.bin"))
-    
+    os.chdir("../")
+    os.system("platformio run")
+    os.system("platformio run --target upload")
+    os.system("platformio device monitor")
+
     
 if __name__ == "__main__":
     
@@ -48,7 +52,3 @@ if __name__ == "__main__":
     # jinjify(result)
     # os.chdir(os.path.abspath(sys.argv[2] if len(sys.argv) >= 3 else "."))
     main()
-    os.chdir("../")
-    os.system("platformio run")
-    os.system("platformio run --target upload")
-    os.system("platformio device monitor")
