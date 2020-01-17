@@ -1,12 +1,15 @@
 #include "Arduino.h"
+#include "EEPROM.h"
+
 #include <stdio.h>
 
 #include "ZPC_funcs.h"
+#include "ZPC_IO.h"
 #include "../z80_prog/program.h"
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE (0)
 
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
@@ -76,6 +79,31 @@ uint8_t program_IO[] = {
 // uint8_t program_CUSTOM[] = {
 //   /*%!! array !!%*/
 // };
+
+uint8_t ZPC_IO_Serial_ReadByte()
+{
+  while (!Serial.available())
+    ;
+  return Serial.read();
+}
+
+uint8_t ZPC_IO_Serial_WriteByte(uint8_t data)
+{
+  Serial.write(data);
+  return 0;
+}
+
+uint8_t ZPC_IO_ArduinoROM_ReadByte(uint16_t address)
+{
+  return EEPROM.read(address);
+}
+
+uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
+{
+  EEPROM.write(address, data);
+  return 0;
+}
+
 void setup()
 {
 
@@ -107,18 +135,27 @@ uint32_t i = 0;
 uint8_t W = 0;
 uint8_t R = 0;
 uint8_t IO = 0;
-uint8_t INPUT_CYCLE_ACTIVE = 0;
-uint8_t OUTPUT_CYCLE_ACTIVE = 0;
+
+uint8_t IO_CYCLE_ACTIVE = 0;
+uint8_t PINS_OUTPUT = 0;
+
+uint16_t address = 0xffff;
+uint8_t data = 0xff;
+
+uint32_t start_time = millis();
 
 void loop()
 {
   digitalWrite(CLK, LOW);
-  //delay(500);
   digitalWrite(CLK, HIGH);
 
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
   R = !digitalRead(RD_);
+
+  address = ZPC_GetAddress();
+  data = ZPC_GetData();
+
   if (DEBUG_MODE)
   {
     if (IO)
@@ -133,40 +170,71 @@ void loop()
     {
       Serial.print("Read ");
     }
-    sprintf(s, "Address : %04x Data: %02x \n", ZPC_GetAddress(), ZPC_GetData());
+    sprintf(s, "Address : %04x Data: %02x \n", address, data);
     Serial.print(s);
   }
-  if (R && IO && (!INPUT_CYCLE_ACTIVE))
+
+  if (IO && !IO_CYCLE_ACTIVE)
   {
-    uint8_t input_byte = 0xff;
-    if(!Serial.available()){
-    Serial.write("Input: ");}
-    while (!Serial.available())
-      ;
-    input_byte = Serial.read();
-
-
-    ZPC_DataSetOutput();
-    ZPC_SetData(input_byte);
-    INPUT_CYCLE_ACTIVE = 1;
+    if (R)
+    {
+      // First tact of input cycle
+      uint8_t data_in = 0xff;
+      uint8_t io_type = address >> 12; //4 oldest bits in address to choose io type
+      switch (io_type)
+      {
+      case 0x0:
+        data_in = ZPC_IO_ArduinoROM_ReadByte(address);
+        //Serial.print("ROM read");
+        break;
+      case 0x1:
+        data_in = ZPC_IO_Serial_ReadByte();
+        break;
+      default:
+        Serial.print("Invalid IO address\nShutting down...\n");
+        while (1)
+          ;
+      }
+      PINS_OUTPUT = 1;
+      ZPC_DataSetOutput();
+      ZPC_SetData(data_in);
+    }
+    else if (W)
+    {
+      uint8_t io_type = address >> 12; //4 oldest bits in address to choose io type
+      switch (io_type)
+      {
+      case 0b0000:
+        ZPC_IO_ArduinoROM_WriteByte(address, data);
+        break;
+      case 0b0001:
+        //Serial.print("ROM write");
+        ZPC_IO_Serial_WriteByte(data);
+        break;
+      case 0xf:
+        sprintf(s, "Running time: %li", millis() - start_time);
+        Serial.print(s);
+        start_time = millis();
+        break;
+      default:
+        Serial.print("Invalid IO address\nShutting down...\n");
+        while (1)
+          ;
+      }
+    }
+    IO_CYCLE_ACTIVE = 1;
     digitalWrite(WAIT_RES_, LOW);
   }
-  else if (!R && INPUT_CYCLE_ACTIVE)
+  if (IO_CYCLE_ACTIVE && !(W || R))
   {
-    ZPC_DataSetInputPullup();
-    INPUT_CYCLE_ACTIVE = 0;
+    if (PINS_OUTPUT)
+    {
+      ZPC_DataSetInputPullup();
+      PINS_OUTPUT = 0;
+    }
+    IO_CYCLE_ACTIVE = 0;
     digitalWrite(WAIT_RES_, HIGH);
   }
 
-  if(W && IO && (!OUTPUT_CYCLE_ACTIVE)){
-    Serial.write(ZPC_GetData());
-    digitalWrite(WAIT_RES_, LOW);
-    OUTPUT_CYCLE_ACTIVE = 1;
-  }
-  if(!W && OUTPUT_CYCLE_ACTIVE){
-    OUTPUT_CYCLE_ACTIVE = 0;
-    digitalWrite(WAIT_RES_, HIGH);
-  }
-
-  // delay(100);
+  //delay(100);
 }
