@@ -14,14 +14,6 @@ __inline uint16_t __reverse(uint16_t reversee, uint8_t bitcount)
     return reverse;
 }
 
-// __inline uint8_t __reverse8(uint8_t reversee)
-// {
-//     return __reverse(reversee, 8);
-// }
-
-// __inline uint16_t __reverse16(uint16_t reversee){
-//     return __reverse(reversee, 16);
-// }
 
 void ZPC_AddressSetOutput(void)
 {
@@ -152,6 +144,8 @@ void ZPC_ArduinoInit()
     pinMode(WAIT_RES_, OUTPUT);
     digitalWrite(WAIT_RES_, LOW);
 
+    pinMode(CLK, OUTPUT);
+    digitalWrite(CLK, LOW);
     ZPC_AddressSetInputPullup();
     ZPC_DataSetInputPullup();
 
@@ -164,6 +158,7 @@ void ZPC_ArduinoInit()
     pinMode(BUSREQ_, INPUT_PULLUP);
     pinMode(BUSREQ_, OUTPUT);
     digitalWrite(BUSREQ_, HIGH);
+
 }
 
 void ZPC_ProcStart(){
@@ -173,7 +168,7 @@ void ZPC_ProcStart(){
   pinMode(RD_, INPUT);                     // Configure RD_ as input with pull-up
   pinMode(WR_, INPUT);
   digitalWrite(WAIT_RES_, LOW);            //Set the RS trigger
-  // digitalWrite(WAIT_RES_, HIGH);
+  digitalWrite(WAIT_RES_, HIGH);
 
   pinMode(BUSREQ_, OUTPUT);
   digitalWrite(BUSREQ_, HIGH);

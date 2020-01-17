@@ -1,4 +1,7 @@
-
 WorkingWithRAM/.vscode/
 FunctionLibrary/.vscode/
 .vscode/
+WorkingWithRAM/build/
+FunctionLibrary/ZPC_mem.c
+FunctionLibrary/ZPC_pinout.h
+FunctionLibrary/ZPC_setup.c
