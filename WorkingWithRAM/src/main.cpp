@@ -131,6 +131,13 @@ void setup()
   Serial.print("\n");
 
   ZPC_ProcStart();
+    //Reset 1-0-1 pulse for at least 4 CLK ticks
+  digitalWrite(RESET_, LOW);
+  for(uint8_t i=0; i<=10; i++){
+    digitalWrite(CLK, HIGH);
+    digitalWrite(CLK, LOW);
+  }
+  digitalWrite(RESET_, HIGH);
 }
 char s[30];
 uint32_t i = 0;

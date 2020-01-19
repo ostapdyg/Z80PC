@@ -6,7 +6,6 @@
 #include "ZPC_funcs.h"
 #include "ZPC_IO.h"
 #include "../z80_prog/program.h"
-#include "PS2Keyboard.h"
 
 #define program program_CUSTOM
 
@@ -80,6 +79,13 @@ uint8_t program_TEMPLATE[] = {
   // uint8_t program_CUSTOM[] = {
   //   /*%!! array !!%*/
 // };
+uint8_t active = 0;
+
+
+ISR(TIMER2_COMPA_vect){
+  digitalWrite(6, !active);
+  active = !active;
+}
 
 
 
@@ -107,6 +113,21 @@ uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
   return 0;
 }
 
+uint8_t ZPC_ClockConfig(){
+  pinMode(11, OUTPUT);
+   
+   pinMode(12, OUTPUT);
+
+   TCCR1A = ( (1 << COM1A0));
+  
+   TCCR1B = ((1 << WGM12) | (1 << CS10));
+
+   TIMSK1 = 0;
+  
+   OCR1A = 3;  
+}
+
+
 void setup()
 {
 
@@ -120,19 +141,31 @@ void setup()
   for (uint16_t i = 0; i < PROG_SIZE; i++)
   {
     ZPC_MemWrite(address + i, program[i]);
+    // sprintf(s, "%02x ", program[i]); //Should be equal to data
+    // Serial.print(s);
   }
 
   for (uint16_t i = 0; i < PROG_SIZE; i++)
   {
     uint8_t read_data = ZPC_MemRead(address + i);
-    sprintf(s, "%02x ", read_data); //Should be equal to data
-    Serial.print(s);
+    // sprintf(s, "%02x ", read_data); //Should be equal to data
+    // Serial.print(s);
   }
   pinMode(CLK, OUTPUT);
-  Serial.print("\n");
+
+  pinMode(13, OUTPUT);
+
+  ZPC_ClockConfig();
 
   ZPC_ProcStart();
+  digitalWrite(RESET_, LOW);
+  delay(1);
+  digitalWrite(RESET_, HIGH);
+
 }
+
+
+
 char s[30];
 uint32_t i = 0;
 uint8_t W = 0;
@@ -149,8 +182,12 @@ uint32_t start_time = millis();
 
 void loop()
 {
-  digitalWrite(CLK, LOW);
-  digitalWrite(CLK, HIGH);
+  if(Serial.available()){
+    //Serial.print("a");
+    digitalWrite(INT_, 0);
+    delay(1);
+    digitalWrite(INT_, 1);
+  }
 
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
@@ -177,67 +214,86 @@ void loop()
     Serial.print(s);
   }
 
-  if (IO && !IO_CYCLE_ACTIVE)
+  if (IO)
   {
+  sprintf(s, "Address : %04x Data: %02x \n", address, data);
     if (R)
     {
       // First tact of input cycle
       uint8_t data_in = 0xff;
-      uint8_t io_type = address >> 12; //4 oldest bits in address to choose io type
-      switch (io_type)
-      {
-      case 0x0:
-        data_in = ZPC_IO_ArduinoROM_ReadByte(address);
-        //Serial.print("ROM read");
-        break;
-      case 0x1:
-        data_in = ZPC_IO_Serial_ReadByte();
-        break;
-      default:
-        Serial.print("Invalid IO address\nShutting down...\n");
-        while (1)
-          ;
-      }
-      PINS_OUTPUT = 1;
-      ZPC_DataSetOutput();
-      ZPC_SetData(data_in);
+      uint8_t port = address&0xff; //4 oldest bits in address to choose io type
+
+        switch (port)
+        {
+        case 0x0:
+          data_in = ZPC_IO_ArduinoROM_ReadByte(address);
+          //Serial.print("ROM read");
+          break;
+        case 0x1:
+          data_in = ZPC_IO_Serial_ReadByte();
+          break;
+        default:
+          data_in = ZPC_IO_Serial_ReadByte();
+          // while (1)
+            // ;
+        }
+        ZPC_DataSetOutput();
+        ZPC_SetData(data_in);
+      // PINS_OUTPUT = 1;
+
+      // Serial.print(s);
+      // data_in = ZPC_IO_Serial_ReadByte();
+
+
+      digitalWrite(BUSREQ_, LOW);                // Request for a DMA
+      digitalWrite(WAIT_RES_, LOW);              // Now is safe reset WAIT FF (exiting from WAIT state)
+      delayMicroseconds(2);                      // Wait 2us just to be sure that Z80 read the data and go HiZ
+      ZPC_DataSetInputPullup();
+      digitalWrite(WAIT_RES_, HIGH);             // Now Z80 is in DMA (HiZ), so it's safe set WAIT_RES_ HIGH again
+      digitalWrite(BUSREQ_, HIGH); 
     }
     else if (W)
     {
-      uint8_t io_type = address >> 12; //4 oldest bits in address to choose io type
-      switch (io_type)
-      {
-      case 0b0000:
-        ZPC_IO_ArduinoROM_WriteByte(address, data);
-        break;
-      case 0b0001:
-        //Serial.print("ROM write");
-        ZPC_IO_Serial_WriteByte(data);
-        break;
-      case 0xf:
-        sprintf(s, "Running time: %li", millis() - start_time);
-        Serial.print(s);
-        start_time = millis();
-        break;
-      default:
-        Serial.print("Invalid IO address\nShutting down...\n");
-        while (1)
-          ;
-      }
+      uint8_t port = address&0xff;
+        switch (port)
+        {
+        case 0b0000:
+          ZPC_IO_ArduinoROM_WriteByte(address, data);
+          break;
+        case 0b0001:
+          //Serial.print("ROM write");
+          ZPC_IO_Serial_WriteByte(data);
+          break;
+        case 0xf:
+          sprintf(s, "Running time: %li ms \n", millis() - start_time);
+          Serial.print(s);
+          start_time = millis();
+          break;
+        default:
+          ZPC_IO_Serial_WriteByte(data);
+          // while (1)
+            // ;
+        }
+      // ZPC_IO_Serial_WriteByte(data);
+      
+      digitalWrite(BUSREQ_, LOW);                 // Request for a DMA
+      digitalWrite(WAIT_RES_, LOW);               // Reset WAIT FF exiting from WAIT state
+      delayMicroseconds(2);
+      digitalWrite(WAIT_RES_, HIGH);              // Now Z80 is in DMA, so it's safe set WAIT_RES_ HIGH again
+      digitalWrite(BUSREQ_, HIGH);  
     }
-    IO_CYCLE_ACTIVE = 1;
-    digitalWrite(WAIT_RES_, LOW);
-  }
-  if (IO_CYCLE_ACTIVE && !(W || R))
-  {
-    if (PINS_OUTPUT)
-    {
-      ZPC_DataSetInputPullup();
-      PINS_OUTPUT = 0;
-    }
-    IO_CYCLE_ACTIVE = 0;
-    digitalWrite(WAIT_RES_, HIGH);
-  }
 
-  //delay(100);
+  }
+  // if (IO_CYCLE_ACTIVE && !(W || R))
+  // {
+  //   if (PINS_OUTPUT)
+  //   {
+  //     ZPC_DataSetInputPullup();
+  //     PINS_OUTPUT = 0;
+  //   }
+  //   IO_CYCLE_ACTIVE = 0;
+  //   digitalWrite(WAIT_RES_, HIGH);
+  // }
+
+
 }
