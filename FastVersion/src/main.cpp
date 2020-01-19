@@ -6,6 +6,7 @@
 #include "ZPC_funcs.h"
 #include "ZPC_IO.h"
 #include "../z80_prog/program.h"
+#include "PS2Keyboard.h"
 
 #define program program_CUSTOM
 
