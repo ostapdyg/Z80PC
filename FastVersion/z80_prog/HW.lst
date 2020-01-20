@@ -1,0 +1,112 @@
+# file opened: HW.asm
+ 1    0000              ;==============================================================================
+ 2    0000              ;
+ 3    0000              ; Blink demo
+ 4    0000              ; Z80-MBC2 - HW ref: A040618
+ 5    0000              ;
+ 6    0000              ;==============================================================================
+ 7    0000
+ 8    0000              rx_port         .equ    $01             ; IOS "serial Rx" read port address
+ 9    0000              opcode_port     .equ    $01             ; IOS opcode write port address
+10    0000              exec_wport      .equ    $00             ; IOS "execute opcode" write port address
+11    0000              tx_opcode       .equ    $01             ; IOS "serial Tx" operation opcode
+12    0000              usrLED_opcode   .equ    $00             ; IOS "user LED" operation opcode
+13    0000              eos             .equ    $00             ; End of string
+14    0000              cr              .equ    $0d             ; Carriage return
+15    0000              lf              .equ    $0a             ; Line feed
+HW.asm(16): error: Unexpected: t
+16    0000                  output "HW.bin" t
+17    0000                              .org    $0000
+18    0000 C3 13 00     				jp		start			; reset jump to start
+19    0003 00 00 00...                  .block  16              ; Local SP area
+20    0013
+21    0013              ;
+22    0013              ; Main program
+23    0013              ;
+24    0013
+25    0013 31 13 00     start           ld      sp, $           ; Init stack
+26    0016 21 28 00                     ld      hl, message     ; Print a message
+27    0019 CD 6B 00                     call    puts
+28    001C 3E 01                        ld      a, $01          ; Blinks...
+29    001E              loop            ;call    user_led
+30    001E CD 54 00                     call    delay
+31    0021 2F                           cpl
+32    0022                              ;call    user_led
+33    0022 CD 54 00                     call    delay
+34    0025 2F                           cpl
+35    0026 18 F6                        jr      loop
+36    0028
+37    0028 0D 0A 5A 38  message         .byte   cr, lf, "Z80-MBC2 User led blink demo running...", cr, lf, eos
+37    002C 30 2D 4D 42
+37    0030 43 32 20 55
+37    0034 73 65 72 20
+37    0038 6C 65 64 20
+37    003C 62 6C 69 6E
+37    0040 6B 20 64 65
+37    0044 6D 6F 20 72
+37    0048 75 6E 6E 69
+37    004C 6E 67 2E 2E
+37    0050 2E 0D 0A 00
+38    0054
+39    0054              ;
+40    0054              ; Delay routine
+41    0054              ;
+42    0054
+43    0054 F5           delay           push    af
+44    0055 C5                           push    bc
+45    0056 D5                           push    de
+46    0057 01 30 00                     ld      bc, $0030       ; outer loop value (total = outer*inner)
+47    005A 11 00 10     outer           ld      de, $1000       ; inner loop value
+48    005D 1B           inner           dec     de
+49    005E 7A                           ld      a, d
+50    005F B3                           or      e               ; A = D | E
+51    0060 20 FB                        jr      nz, inner       ; Jump if A is not zero
+52    0062 0B                           dec     bc
+53    0063 78                           ld      a, b
+54    0064 B1                           or      c               ; A = B | C
+55    0065 20 F3                        jr      nz, outer       ; Jump if A is not zero
+56    0067 D1                           pop     de
+57    0068 C1                           pop     bc
+58    0069 F1                           pop     af
+59    006A C9                           ret
+60    006B
+61    006B              ;
+62    006B              ; Send a string to the serial line, HL contains the pointer to the string
+63    006B              ;
+64    006B
+65    006B F5           puts            push    af
+66    006C E5                           push    hl
+67    006D 7E           puts_loop       ld      a, (hl)
+68    006E FE 00                        cp      eos             ; End of string reached?
+69    0070 28 06                        jr      z, puts_end     ; Yes
+70    0072 CD 7B 00                     call    putc
+71    0075 23                           inc     hl              ; Increment character pointer
+72    0076 18 F5                        jr      puts_loop       ; Transmit next character
+73    0078 E1           puts_end        pop     hl
+74    0079 F1                           pop     af
+75    007A C9                           ret
+76    007B
+77    007B              ;
+78    007B              ; Send a single character to the serial line (A contains the character)
+79    007B              ;
+80    007B
+81    007B F5           putc            push    af              ; Save A
+82    007C 3E 01                        ld      a, tx_opcode    ; A = IOS Serial Tx operation opcode
+83    007E                              ;out     (opcode_port), a; Send to IOS the Tx operation opcode
+84    007E F1                           pop     af              ; Restore the output char into A
+85    007F D3 00                        out     (exec_wport), a ; Write A to the serial
+86    0081 C9                           ret
+87    0082
+88    0082              ;
+89    0082              ; Set USER led on or off (A contains the value. 1 = on, 0 = off)
+90    0082              ;
+91    0082
+92    0082 F5           user_led        push    af
+93    0083 3E 00                        ld      a, usrLED_opcode
+94    0085 D3 01                        out     (opcode_port), a
+95    0087 F1                           pop     af
+96    0088 D3 00                        out     (exec_wport), a
+97    008A C9                           ret
+98    008B
+99    008B                              .end
+# file closed: HW.asm

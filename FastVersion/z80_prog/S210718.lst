@@ -1,0 +1,243 @@
+# file opened: S210718.asm
+  1   0000              ;**********************************************************************************
+  2   0000              ;
+  3   0000              ; Z80-MBC2 uBIOS for Basic - S210718 - HW ref: A040618
+  4   0000              ;
+  5   0000              ; Adapted from Grant Searle great work!
+  6   0000              ;
+  7   0000              ;
+  8   0000              ; NOTE: all changes in the following code are marked with this string "Z80-MBC2:" in the comment
+  9   0000              ;       (the basic.asm file is not modified)
+ 10   0000              ;
+ 11   0000              ;**********************************************************************************
+ 12   0000              ;==================================================================================
+ 13   0000              ; Contents of this file are copyright Grant Searle
+ 14   0000              ;
+ 15   0000              ; You have permission to use this for NON COMMERCIAL USE ONLY
+ 16   0000              ; If you wish to use it elsewhere, please include an acknowledgement to myself.
+ 17   0000              ;
+ 18   0000              ; http://searle.hostei.com/grant/index.html
+ 19   0000              ;
+ 22   0000              ; If the above don't work, please perform an Internet search to see if I have
+ 23   0000              ; updated the web page hosting service.
+ 24   0000              ;
+ 25   0000              ;==================================================================================
+ 26   0000
+ 27   0000              ; Minimum 6850 ACIA interrupt driven serial I/O to run modified NASCOM Basic 4.7
+ 28   0000              ; Full input buffering with incoming data hardware handshaking
+ 29   0000              ; Handshake shows full before the buffer is totally filled to allow run-on from the sender
+ 30   0000
+ 31   0000              SER_BUFSIZE     .EQU     3FH
+ 32   0000              SER_FULLSIZE    .EQU     30H
+ 33   0000              SER_EMPTYSIZE   .EQU     5
+ 34   0000
+ 35   0000              RTS_HIGH        .EQU     0D6H
+ 36   0000              RTS_LOW         .EQU     096H
+ 37   0000
+ 38   0000              serBuf          .EQU     $2000
+ 39   0000              serInPtr        .EQU     serBuf+SER_BUFSIZE
+ 40   0000              serRdPtr        .EQU     serInPtr+2
+ 41   0000              serBufUsed      .EQU     serRdPtr+2
+ 42   0000              basicStarted    .EQU     serBufUsed+1
+ 43   0000              TEMPSTACK       .EQU     $20ED ; Top of BASIC line input buffer so is "free ram" when BASIC resets
+ 44   0000
+ 45   0000              CR              .EQU     0DH
+ 46   0000              LF              .EQU     0AH
+ 47   0000              CS              .EQU     0CH             ; Clear screen
+ 48   0000
+ 49   0000                  output "S210718.bin", t
+ 50   0000
+ 51   0000                              .ORG $0000
+ 52   0000              ;------------------------------------------------------------------------------
+ 53   0000              ; Reset
+ 54   0000
+ 55   0000 F3           RST00           DI                       ;Disable interrupts
+ 56   0001 C3 A8 00                     JP       INIT            ;Initialize Hardware and go
+ 57   0004
+ 58   0004              ;------------------------------------------------------------------------------
+ 59   0004              ; TX a character over RS232
+ 60   0004
+ 61   0004                              .ORG     0008H
+ 62   0008 C3 91 00     RST08            JP      TXA
+ 63   000B
+ 64   000B              ;------------------------------------------------------------------------------
+ 65   000B              ; RX a character over RS232 Channel A [Console], hold here until char ready.
+ 66   000B
+ 67   000B                              .ORG 0010H
+ 68   0010 C3 6A 00     RST10            JP      RXA
+ 69   0013
+ 70   0013              ;------------------------------------------------------------------------------
+ 71   0013              ; Check serial status
+ 72   0013
+ 73   0013                              .ORG 0018H
+ 74   0018 C3 9A 00     RST18            JP      CKINCHAR
+ 75   001B
+ 76   001B              ;------------------------------------------------------------------------------
+ 77   001B              ; RST 38 - INTERRUPT VECTOR [ for IM 1 ]
+ 78   001B
+ 79   001B                              .ORG     0038H
+ 80   0038 18 00        RST38            JR      serialInt
+ 81   003A
+ 82   003A              ;------------------------------------------------------------------------------
+ 83   003A
+ 84   003A F5           serialInt:      PUSH     AF
+ 85   003B E5                           PUSH     HL
+ 86   003C
+ 87   003C                              ;IN       A,($80)         ; Z80-MBC2: No buffer full to check here
+ 88   003C                              ;AND      $01             ; Check if interupt due to read buffer full
+ 89   003C                              ;JR       Z,rts0          ; if not, ignore
+ 90   003C
+ 91   003C DB 01                        IN       A,($01)         ; Z80-MBC2: Changed port addr from $81 to $01
+ 92   003E F5                           PUSH     AF
+ 93   003F 3A 43 20                     LD       A,(serBufUsed)
+ 94   0042 FE 3F                        CP       SER_BUFSIZE     ; If full then ignore
+ 95   0044 20 03                        JR       NZ,notFull
+ 96   0046 F1                           POP      AF
+ 97   0047 18 1C                        JR       rts0
+ 98   0049
+ 99   0049 2A 3F 20     notFull:        LD       HL,(serInPtr)
+100   004C 23                           INC      HL
+101   004D 7D                           LD       A,L             ; Only need to check low byte becasuse buffer<256 bytes
+102   004E FE 3F                        CP       (serBuf+SER_BUFSIZE) & $FF
+103   0050 20 03                        JR       NZ, notWrap
+104   0052 21 00 20                     LD       HL,serBuf
+105   0055 22 3F 20     notWrap:        LD       (serInPtr),HL
+106   0058 F1                           POP      AF
+107   0059 77                           LD       (HL),A
+108   005A 3A 43 20                     LD       A,(serBufUsed)
+109   005D 3C                           INC      A
+110   005E 32 43 20                     LD       (serBufUsed),A
+111   0061 FE 30                        CP       SER_FULLSIZE
+112   0063 38 00                        JR       C,rts0
+113   0065                              ;LD       A,RTS_HIGH     ; Z80-MBC2: No RTS HW handshackig here
+114   0065                              ;OUT      ($80),A
+115   0065 E1           rts0:           POP      HL
+116   0066 F1                           POP      AF
+117   0067 FB                           EI
+118   0068 ED 4D                        RETI
+119   006A
+120   006A              ;------------------------------------------------------------------------------
+121   006A              RXA:
+122   006A 3A 43 20     waitForChar:    LD       A,(serBufUsed)
+123   006D FE 00                        CP       $00
+124   006F 28 F9                        JR       Z, waitForChar
+125   0071 E5                           PUSH     HL
+126   0072 2A 41 20                     LD       HL,(serRdPtr)
+127   0075 23                           INC      HL
+128   0076 7D                           LD       A,L             ; Only need to check low byte becasuse buffer<256 bytes
+129   0077 FE 3F                        CP       (serBuf+SER_BUFSIZE) & $FF
+130   0079 20 03                        JR       NZ, notRdWrap
+131   007B 21 00 20                     LD       HL,serBuf
+132   007E F3           notRdWrap:      DI
+133   007F 22 41 20                     LD       (serRdPtr),HL
+134   0082 3A 43 20                     LD       A,(serBufUsed)
+135   0085 3D                           DEC      A
+136   0086 32 43 20                     LD       (serBufUsed),A
+137   0089 FE 05                        CP       SER_EMPTYSIZE
+138   008B 30 00                        JR       NC,rts1
+139   008D                              ;LD       A,RTS_LOW       ; Z80-MBC2: No RTS HW handshackig here
+140   008D                              ;OUT      ($80),A
+141   008D              rts1:
+142   008D 7E                           LD       A,(HL)
+143   008E FB                           EI
+144   008F E1                           POP      HL
+145   0090 C9                           RET                      ; Char ready in A
+146   0091
+147   0091              ;------------------------------------------------------------------------------
+148   0091              TXA:
+149   0091 F5           conout1:        PUSH     AF              ; Store character
+150   0092              				;IN       A,($80)         ; Z80-MBC2: No TX status needed here ;Status byte
+151   0092                              ;BIT      1,A             ; Set Zero flag if still transmitting character
+152   0092                              ;JR       Z,conout1       ; Loop until flag signals ready
+153   0092 3E 01                        LD       A,$01           ; Z80-MBC2: (Added) A = Serial TX Operation Code
+154   0094 D3 01                        OUT      ($01),A         ; Z80-MBC2: (Added) Write the Serial TX Opcode to IOS
+155   0096 F1                           POP      AF              ; Retrieve character
+156   0097 D3 00                        OUT      ($00),A         ; Z80-MBC2: Changed port addr from $81 to $01 ; Output the character
+157   0099 C9                           RET
+158   009A
+159   009A              ;------------------------------------------------------------------------------
+160   009A 3A 43 20     CKINCHAR        LD       A,(serBufUsed)
+161   009D FE 00                        CP       $0
+162   009F C9                           RET
+163   00A0
+164   00A0 7E           PRINT:          LD       A,(HL)          ; Get character
+165   00A1 B7                           OR       A               ; Is it $00 ?
+166   00A2 C8                           RET      Z               ; Then RETurn on terminator
+167   00A3 CF                           RST      08H             ; Print it
+168   00A4 23                           INC      HL              ; Next Character
+169   00A5 18 F9                        JR       PRINT           ; Continue until $00
+170   00A7 C9                           RET
+171   00A8              ;------------------------------------------------------------------------------
+172   00A8              INIT:
+173   00A8 21 ED 20                    LD        HL,TEMPSTACK    ; Temp stack
+174   00AB F9                          LD        SP,HL           ; Set up a temporary stack
+175   00AC 21 00 20                    LD        HL,serBuf
+176   00AF 22 3F 20                    LD        (serInPtr),HL
+177   00B2 22 41 20                    LD        (serRdPtr),HL
+178   00B5 AF                          XOR       A               ;0 to accumulator
+179   00B6 32 43 20                    LD        (serBufUsed),A
+180   00B9                             ;LD        A,RTS_LOW       ; Z80-MBC2: Nothing to initialize
+181   00B9                             ;OUT       ($80),A         ; Initialise ACIA
+182   00B9 ED 56                       IM        1
+183   00BB FB                          EI
+184   00BC 21 F5 00                    LD        HL,SIGNON1      ; Sign-on message
+185   00BF CD A0 00                    CALL      PRINT           ; Output string
+186   00C2 3A 44 20                    LD        A,(basicStarted); Check the BASIC STARTED flag
+187   00C5 FE 59                       CP        'Y'             ; to see if this is power-up
+188   00C7 20 16                       JR        NZ,COLDSTART    ; If not BASIC started then always do cold start
+189   00C9 21 2B 01                    LD        HL,SIGNON2      ; Cold/warm message
+190   00CC CD A0 00                    CALL      PRINT           ; Output string
+191   00CF              CORW:
+192   00CF CD 6A 00                    CALL      RXA
+193   00D2 E6 DF                       AND       %11011111       ; lower to uppercase
+194   00D4 FE 43                       CP        'C'
+195   00D6 20 0F                       JR        NZ, CHECKWARM
+196   00D8 CF                          RST       08H
+197   00D9 3E 0D                       LD        A,$0D
+198   00DB CF                          RST       08H
+199   00DC 3E 0A                       LD        A,$0A
+200   00DE CF                          RST       08H
+201   00DF 3E 59        COLDSTART:     LD        A,'Y'           ; Set the BASIC STARTED flag
+202   00E1 32 44 20                    LD        (basicStarted),A
+203   00E4 C3 50 01                    JP        $0150           ; Start BASIC COLD
+204   00E7              CHECKWARM:
+205   00E7 FE 57                       CP        'W'
+206   00E9 20 E4                       JR        NZ, CORW
+207   00EB CF                          RST       08H
+208   00EC 3E 0D                       LD        A,$0D
+209   00EE CF                          RST       08H
+210   00EF 3E 0A                       LD        A,$0A
+211   00F1 CF                          RST       08H
+212   00F2 C3 53 01                    JP        $0153           ; Start BASIC WARM
+213   00F5
+214   00F5              SIGNON1:       ;.BYTE     CS              ; Z80-MBC2: Changed SIGNON1 string
+215   00F5 75 42 49 4F                 .BYTE     "uBIOS - S210718 (Adapted from Z80 SBC by G. Searle)",CR,LF,0
+215   00F9 53 20 2D 20
+215   00FD 53 32 31 30
+215   0101 37 31 38 20
+215   0105 28 41 64 61
+215   0109 70 74 65 64
+215   010D 20 66 72 6F
+215   0111 6D 20 5A 38
+215   0115 30 20 53 42
+215   0119 43 20 62 79
+215   011D 20 47 2E 20
+215   0121 53 65 61 72
+215   0125 6C 65 29 0D
+215   0129 0A 00
+216   012B 0D 0A        SIGNON2:       .BYTE     CR,LF            ; Z80-MBC2: Changed SIGNON2 string
+217   012D 75 42 49 4F                 .BYTE     "uBIOS: Cold or warm start (C/W)?",0
+217   0131 53 3A 20 43
+217   0135 6F 6C 64 20
+217   0139 6F 72 20 77
+217   013D 61 72 6D 20
+217   0141 73 74 61 72
+217   0145 74 20 28 43
+217   0149 2F 57 29 3F
+217   014D 00
+218   014E
+219   014E                             .org      $14f            ; Z80-MBC2: Last byte for this uBIOS (BASIC starts next one)!
+220   014F 00           LastByte:      .byte     $00
+221   0150
+222   0150                             .END
+# file closed: S210718.asm

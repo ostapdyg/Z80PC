@@ -5,4 +5,20 @@ WorkingWithRAM/build/
 FunctionLibrary/ZPC_mem.c
 FunctionLibrary/ZPC_pinout.h
 FunctionLibrary/ZPC_setup.c
+<<<<<<< HEAD
+WorkingWithRAM/z80_prog/simple.bin
+WorkingWithRAM/z80_prog/simple.lst
+WorkingWithRAM/z80_prog/simple.bin
+WorkingWithRAM/z80_prog/simple.lst
+FastVersion/.gitignore
+FastVersion/z80_prog/ram_diagnostics.bin
+FastVersion/z80_prog/ram_diagnostics.lst
+WorkingWithRAM/z80_prog/ram_diagnostics.bin
+*.lst
+*.bin
+=======
 VGA/.pio/
+>>>>>>> origin/master
+
+.vscode/settings.json
+.vscode/c_cpp_properties.json

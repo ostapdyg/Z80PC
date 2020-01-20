@@ -4,21 +4,23 @@
 
 
 main:   
-    ld bc, 0xf000
+    ld bc, 0xf00f
     out (c), a
 
-
+lp:
+    nop
     ld bc, 0x0000
 loop:
     ld a, (bc)
     inc bc
-    ld hl, 0x02ff
+    ld hl, 0xffff
     sbc hl, bc
     jp nz, loop
 
-    ld bc, 0xf000
+    ld bc, 0x000f
     out (c), a
-    ld bc, 0xa000
-    out(c), a
+    jp lp
 
-outend    
+
+
+outend

@@ -4,7 +4,7 @@ import os
 import sys
 
 def assemblify(filename, asm="sjasmplus"):
-    
+    os.system(f"{asm} {filename} ")
     os.system(f"{asm} {filename} --lst")
 
     
