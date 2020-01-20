@@ -19,3 +19,6 @@ WorkingWithRAM/z80_prog/ram_diagnostics.bin
 =======
 VGA/.pio/
 >>>>>>> origin/master
+
+.vscode/settings.json
+.vscode/c_cpp_properties.json
