@@ -13,3 +13,5 @@ FastVersion/.gitignore
 FastVersion/z80_prog/ram_diagnostics.bin
 FastVersion/z80_prog/ram_diagnostics.lst
 WorkingWithRAM/z80_prog/ram_diagnostics.bin
+*.lst
+*.bin

@@ -124,7 +124,7 @@ uint8_t ZPC_ClockConfig(){
 
    TIMSK1 = 0;
   
-   OCR1A = 3;  
+   OCR1A = 399;  
 }
 
 
@@ -154,7 +154,8 @@ void setup()
   pinMode(CLK, OUTPUT);
 
   pinMode(13, OUTPUT);
-
+  pinMode(INT_, OUTPUT);
+  digitalWrite(INT_, 1);
   ZPC_ClockConfig();
 
   ZPC_ProcStart();
@@ -183,7 +184,7 @@ uint32_t start_time = millis();
 void loop()
 {
   if(Serial.available()){
-    //Serial.print("a");
+
     digitalWrite(INT_, 0);
     delay(1);
     digitalWrite(INT_, 1);

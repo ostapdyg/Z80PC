@@ -47,7 +47,7 @@
 
 #define RESET_ 5   // PB7 pin 8
 #define BUSREQ_ 50 // PD6 pin 20
-#define CLK 6      // PD7 pin 21
+#define CLK 11      // PD7 pin 21
 
 #define WAIT_RES_ 47 // PB0 pin 1    Internal control line
 

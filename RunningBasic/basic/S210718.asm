@@ -45,9 +45,7 @@ TEMPSTACK       .EQU     $20ED ; Top of BASIC line input buffer so is "free ram"
 CR              .EQU     0DH
 LF              .EQU     0AH
 CS              .EQU     0CH             ; Clear screen
-    
-    output "S210718.bin", t
-
+                output "S210718.bin", t
                 .ORG $0000
 ;------------------------------------------------------------------------------
 ; Reset
@@ -58,29 +56,29 @@ RST00           DI                       ;Disable interrupts
 ;------------------------------------------------------------------------------
 ; TX a character over RS232 
                  BLOCK 4, 0
+
                 .ORG     0008H
 RST08            JP      TXA
 
 ;------------------------------------------------------------------------------
 ; RX a character over RS232 Channel A [Console], hold here until char ready.
-
+                BLOCK 5, 0
                 .ORG 0010H
 RST10            JP      RXA
 
 ;------------------------------------------------------------------------------
 ; Check serial status
-
+                BLOCK 5, 0
                 .ORG 0018H
 RST18            JP      CKINCHAR
 
 ;------------------------------------------------------------------------------
 ; RST 38 - INTERRUPT VECTOR [ for IM 1 ]
-
+                BLOCK 29, 0
                 .ORG     0038H
 RST38            JR      serialInt       
 
 ;------------------------------------------------------------------------------
-
 serialInt:      PUSH     AF
                 PUSH     HL
 
@@ -150,8 +148,12 @@ conout1:        PUSH     AF              ; Store character
 				;IN       A,($80)         ; Z80-MBC2: No TX status needed here ;Status byte       
                 ;BIT      1,A             ; Set Zero flag if still transmitting character       
                 ;JR       Z,conout1       ; Loop until flag signals ready
-                LD       A,$01           ; Z80-MBC2: (Added) A = Serial TX Operation Code
-                OUT      ($01),A         ; Z80-MBC2: (Added) Write the Serial TX Opcode to IOS
+                ; LD       A,$01           ; Z80-MBC2: (Added) A = Serial TX Operation Code
+                nop 
+                nop
+                ; OUT      ($01),A         ; Z80-MBC2: (Added) Write the Serial TX Opcode to IOS
+                nop 
+                nop
                 POP      AF              ; Retrieve character
                 OUT      ($00),A         ; Z80-MBC2: Changed port addr from $81 to $01 ; Output the character
                 RET
@@ -216,9 +218,9 @@ SIGNON1:       ;.BYTE     CS              ; Z80-MBC2: Changed SIGNON1 string
 SIGNON2:       .BYTE     CR,LF            ; Z80-MBC2: Changed SIGNON2 string
                .BYTE     "uBIOS: Cold or warm start (C/W)?",0
                
+               nop
                .org      $14f            ; Z80-MBC2: Last byte for this uBIOS (BASIC starts next one)!
 LastByte:      .byte     $00
   
                .END
-
 outend
