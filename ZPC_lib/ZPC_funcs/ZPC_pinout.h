@@ -36,20 +36,21 @@
 
 
 
-#define INT_ 48    // PB1 pin 2    Z80 control bus
-#define BUSACK_ 51 // PB2 pin 3
-#define WAIT_ 49   // PB3 pin 4
+#define INT_ 48    
+#define BUSACK_ 51 
+#define WAIT_ 49
 
-#define WR_ 53 // PB4 pin 5
-#define RD_ 52 // PB5 pin 6
+#define WR_ 53
+#define RD_ 52
 
-#define MREQ_ 46 // PB6 pin 7
+#define MREQ_ 46
 
-#define RESET_ 5   // PB7 pin 8
-#define BUSREQ_ 50 // PD6 pin 20
-#define CLK 11      // PD7 pin 21
+#define RESET_ 5 
+#define BUSREQ_ 50
 
-#define WAIT_RES_ 47 // PB0 pin 1    Internal control line
+#define CLK 11 
+
+#define WAIT_RES_ 47 
 
 #define USER 13
 
