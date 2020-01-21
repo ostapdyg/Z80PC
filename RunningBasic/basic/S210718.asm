@@ -155,7 +155,7 @@ conout1:        PUSH     AF              ; Store character
                 nop 
                 nop
                 POP      AF              ; Retrieve character
-                OUT      ($00),A         ; Z80-MBC2: Changed port addr from $81 to $01 ; Output the character
+                OUT      ($01),A         ; Z80-MBC2: Changed port addr from $81 to $01 ; Output the character
                 RET
 
 ;------------------------------------------------------------------------------

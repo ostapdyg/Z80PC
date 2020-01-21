@@ -902,14 +902,12 @@ DODEL:  LD      A,(NULFLG)      ; Get null flag status
         JP      NZ,ECHDEL       ; Set - Echo it
         DEC     B               ; Decrement length
         JP      Z,GETLIN        ; Get line again if empty
-        ;CALL    OUTC            ; Output null character
-        nop
-        nop
+        CALL    OUTC            ; Output null character
         .BYTE   3EH             ; Skip "DEC B"
 ECHDEL: DEC     B               ; Count bytes in buffer
         DEC     HL              ; Back space buffer
         JP      Z,OTKLN         ; No buffer - Try again
-        LD      A, 0x7f          ; Get deleted byte
+        LD      A,(HL)          ; Get deleted byte
         CALL    OUTC            ; Echo it
         JP      MORINP          ; Get more input
 

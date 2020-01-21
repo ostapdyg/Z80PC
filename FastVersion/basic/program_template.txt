@@ -1,0 +1,11 @@
+#ifndef Z80ASM_PROG
+#define Z80ASM_PROG
+
+#define PROG_SIZE /*%!!  size  !!%*/
+
+
+uint8_t program_CUSTOM[] = {
+  /*%!! array !!%*/
+};
+
+#endif

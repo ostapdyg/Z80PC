@@ -10,7 +10,7 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (0)  //Possible values: R|W or IO
+#define DEBUG_MODE (0) //Possible values: R|W or IO
 
 #define SERIAL_INTERRUPT_VECTOR 0x12
 
@@ -18,7 +18,6 @@
 #define KEYBOARD_IRQ 3
 
 PS2Keyboard keyboard;
-
 
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
@@ -43,9 +42,6 @@ uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x4c
     0x00, 0x00, 0x00, 0x00, //0x50
     0x00};
-
-
-
 
 uint8_t ZPC_IO_Serial_ReadByte()
 {
@@ -73,7 +69,6 @@ uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
   return 0;
 }
 
-
 void setup()
 {
 
@@ -83,7 +78,6 @@ void setup()
   Serial.print("start\n");
 
   keyboard.begin(KEYBOARD_DATA, KEYBOARD_IRQ);
-
 
   ZPC_ArduinoInit();
 
@@ -133,13 +127,11 @@ void loop()
 {
   digitalWrite(CLK, LOW);
   digitalWrite(CLK, HIGH);
-  
   if (INTERRUPT_ACTIVE)
   {
     // if(!Serial1.available()){
     INTERRUPT_ACTIVE = 0;
     // }
-
     digitalWrite(INT_, HIGH);
   }
   IO = !digitalRead(WAIT_);
@@ -163,15 +155,15 @@ void loop()
     {
       Serial.print("Read ");
     }
-    if (INTERRUPT_ACTIVE){
+    if (INTERRUPT_ACTIVE)
+    {
       Serial.print("Int ");
     }
     sprintf(s, "Address : %04x Data: %02x \n", address, data);
     Serial.print(s);
   }
 
-
-  if ((IO_CYCLE_ACTIVE) && !(IO) && !(R|W))
+  if ((IO_CYCLE_ACTIVE) && !(IO) && !(R | W))
   {
     if (PINS_OUTPUT)
     {
@@ -223,7 +215,7 @@ void loop()
     digitalWrite(WAIT_RES_, LOW);
   }
 
- if (keyboard.available()&&!INTERRUPT_ACTIVE)
+  if (keyboard.available() && !INTERRUPT_ACTIVE)
   {
     INTERRUPT_ACTIVE = 1;
 
