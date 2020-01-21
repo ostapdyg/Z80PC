@@ -118,6 +118,9 @@ static const char my_str[] PROGMEM="";
 //SoftwareSerial mySerial(50, 51); //RX, TX
 char strs[2];
 char temp;
+static char* blinker = "_";
+uint16_t blink = 0;
+bool toggle = true;
 
 void setup() {
   Serial3.begin(9600);
@@ -125,16 +128,40 @@ void setup() {
   vga.begin();
   vga.clear(0);
   strs[1] = '\0';
-  strs[0] = 'A';
+  strs[0] = '_';
   //vga.clear(11);
 
  
   //vga.printPROGMEM((byte*)fnt_nanofont_data, FNT_NANOFONT_SYMBOLS_COUNT, FNT_NANOFONT_HEIGHT, 3, 1, str1, x, VGAX_HEIGHT/2+4, 11);
   
 }
+
+void draw_box(uint8_t x, uint8_t y, uint8_t color)
+{
+  for (int i = 0; i < 7; i++)
+  {
+    for (int j = 0; j < 7; j++)
+    {
+      vga.putpixel(x+j,y+i, 0);
+    }
+  }
+}
+
 void loop() {
   
-
+  // blink %= 20000;
+  // if (!blink)
+  // {
+  //   draw_box(x,y,toggle);
+  //   toggle = !toggle;
+  // }
+  // blink++;
+  if (blink > 10)
+  {
+    toggle = !toggle;
+    blink = 0;
+  }
+  vga.printSRAM((byte*)fnt_nanofont_data, FNT_NANOFONT_SYMBOLS_COUNT, FNT_NANOFONT_HEIGHT, 3, 1, blinker, x, y, 0);
   if (Serial3.available())
   {
     temp = Serial3.read();
@@ -169,14 +196,8 @@ void loop() {
         x -= FNT_NANOFONT_MAX_WIDTH;
       }
       
+      draw_box(x,y,0);
 
-      for (int i = 0; i < 7; i++)
-      {
-        for (int j = 0; j < 7; j++)
-        {
-          vga.putpixel(x+j,y+i, 0);
-        }
-      }
 
       //vga.printSRAM((byte*)fnt_nanofont_data, FNT_NANOFONT_SYMBOLS_COUNT, FNT_NANOFONT_HEIGHT, 3, 1, strs, x, y, 0);
       break;
@@ -201,7 +222,8 @@ void loop() {
     }
   }
   
-  
+  blink++;
+  vga.printSRAM((byte*)fnt_nanofont_data, FNT_NANOFONT_SYMBOLS_COUNT, FNT_NANOFONT_HEIGHT, 3, 1, blinker, x, y, (toggle ? 11 : 0));
   vga.delay(17);
   vga.setExtendedColorsMask(0);
 
