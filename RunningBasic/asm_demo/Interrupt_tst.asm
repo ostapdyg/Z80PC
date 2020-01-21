@@ -17,6 +17,7 @@ loop:
 
 
 ihdlr_serial:
+    ld a, 0
     in a, (0x01)
     out (0x01), a
     ei
