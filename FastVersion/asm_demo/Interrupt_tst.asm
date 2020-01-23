@@ -3,17 +3,20 @@
     jp main
 main:   
 
+    ld a, "a"
+    out (0x01), a
+    in a, (0x01)
+    out (0x01), a
     im 1
     ei
     ld sp, 0xabcd
+    ld a, "a"
 
 loop:
-        nop 
-        nop
-        nop
+        //out (0x01), a 
       jp loop
 
-    BLOCK 40, 0
+    BLOCK 50, 0
 
 
 ihdlr_serial:

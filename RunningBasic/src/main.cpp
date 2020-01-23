@@ -45,9 +45,15 @@ uint8_t program_TEMPLATE[] = {
 
 uint8_t ZPC_IO_Serial_ReadByte()
 {
-  while (!keyboard.available())
-    ;
-  return keyboard.read();
+  while (!Serial.available() && !keyboard.available())
+    if (keyboard.available())
+    {
+      return keyboard.read();
+    }
+  if (Serial.available())
+  {
+    return Serial.read();
+  }
 }
 
 uint8_t ZPC_IO_Serial_WriteByte(uint8_t data)
@@ -189,15 +195,15 @@ void loop()
         data_in = ZPC_IO_Serial_ReadByte();
         break;
       default:
-        data_in = ZPC_IO_Serial_ReadByte();
-      }
+        sprintf(s, "IO port: %x data %x \n", port, data);
+        Serial.print(s);
+        }
       PINS_OUTPUT = 1;
       ZPC_DataSetOutput();
       ZPC_SetData(data_in);
     }
     else if (W)
     {
-      uint8_t data_in = 0xff;
       uint8_t port = address & 0xff; //4 oldest bits in address to choose io type
       switch (port)
       {
@@ -208,7 +214,8 @@ void loop()
         ZPC_IO_Serial_WriteByte(data);
         break;
       default:
-        ZPC_IO_Serial_WriteByte(data);
+        sprintf(s, "IO port: %x data %x \n", port, data);
+        Serial.print(s);
       }
     }
     IO_CYCLE_ACTIVE = 1;
@@ -218,7 +225,11 @@ void loop()
   if (keyboard.available() && !INTERRUPT_ACTIVE)
   {
     INTERRUPT_ACTIVE = 1;
-
+    digitalWrite(INT_, LOW);
+  }
+  else if (Serial.available() && !INTERRUPT_ACTIVE)
+  {
+    INTERRUPT_ACTIVE = 1;
     digitalWrite(INT_, LOW);
   }
 }

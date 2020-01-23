@@ -87,12 +87,12 @@ void setup()
     ZPC_MemWrite(address + i, program[i]);
   }
 
-  // for (uint16_t i = 0; i < PROG_SIZE; i++)
-  // {
-  //   uint8_t read_data = ZPC_MemRead(address + i);
-  //   sprintf(s, "%02x ", read_data); //Should be equal to data
-  //   Serial.print(s);
-  // }
+  for (uint16_t i = 0x2045+0x00f9; i < 0x2045+0x015d; i++)
+  {
+    uint8_t read_data = ZPC_MemRead(address + i);
+    //sprintf(s, "%02x ", read_data); //Should be equal to data
+    Serial.write(read_data);
+  }
 
   pinMode(CLK, OUTPUT);
 
@@ -120,10 +120,11 @@ void loop()
 {
   if (Serial.available())
   {
-
-    digitalWrite(INT_, 0);
-    delay(1);
-    digitalWrite(INT_, 1);
+    digitalWrite(INT_, LOW);
+  }
+  else
+  {
+    digitalWrite(INT_, HIGH);
   }
 
   IO = !digitalRead(WAIT_);
@@ -173,12 +174,6 @@ void loop()
       }
       ZPC_DataSetOutput();
       ZPC_SetData(data_in);
-      digitalWrite(BUSREQ_, LOW);
-      digitalWrite(WAIT_RES_, LOW);
-      delayMicroseconds(2);
-      ZPC_DataSetInputPullup();
-      digitalWrite(WAIT_RES_, HIGH);
-      digitalWrite(BUSREQ_, HIGH);
     }
     else if (W)
     {
@@ -199,18 +194,15 @@ void loop()
       default:
         ZPC_IO_Serial_WriteByte(data);
       }
-      digitalWrite(BUSREQ_, LOW);
-      digitalWrite(WAIT_RES_, LOW);
-      delayMicroseconds(2);
-      digitalWrite(WAIT_RES_, HIGH);
-      digitalWrite(BUSREQ_, HIGH);
     }
-  }
-
-  if (Serial.available())
-  {
-    digitalWrite(INT_, LOW);
-    delayMicroseconds(2);
-    digitalWrite(INT_, HIGH);
+    digitalWrite(BUSREQ_, LOW);
+    digitalWrite(WAIT_RES_, LOW);
+    delayMicroseconds(50);
+    if (R)
+    {
+      ZPC_DataSetInputPullup();
+    }
+    digitalWrite(WAIT_RES_, HIGH);
+    digitalWrite(BUSREQ_, HIGH);
   }
 }
