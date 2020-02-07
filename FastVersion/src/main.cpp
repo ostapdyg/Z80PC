@@ -11,6 +11,12 @@
 
 #define DEBUG_MODE (0)
 
+
+#define IO_INT 0x04
+
+char s[30];
+
+
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
     0x00, 0x00, 0x00, 0x00, //0x04
@@ -37,9 +43,9 @@ uint8_t program_TEMPLATE[] = {
 
 uint8_t ZPC_IO_Serial_ReadByte()
 {
-  while (!Serial.available())
-    ;
-  return Serial.read();
+  // while (!Serial.available())
+  //   ;
+  return Serial.available()?Serial.read():0;
 }
 
 uint8_t ZPC_IO_Serial_WriteByte(uint8_t data)
@@ -58,6 +64,26 @@ uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
   EEPROM.write(address, data);
   return 0;
 }
+//0x2045+0x00f9
+//0x2045+0x015d
+void ZPC_IO_Serial_PrintMemory(uint16_t from, uint16_t to){
+  for (uint16_t i = from; i < to; i++)
+  {
+    uint8_t read_data = ZPC_MemRead(i);
+    sprintf(s, "|%02x - %c|", read_data, read_data);
+    // Serial.print(s);
+    Serial.print(s);
+  }
+  Serial.print("\n");
+  // for (uint16_t i = from; i < to; i++)
+  // {
+  //   uint8_t read_data = ZPC_MemRead(i);
+  //   sprintf(s, "%02x ", read_data);
+  //   // Serial.print(s);
+  //   Serial.write(s);
+  // }
+}
+
 
 void ZPC_ClockConfig()
 {
@@ -72,12 +98,11 @@ void ZPC_ClockConfig()
   OCR1A = 399;
 }
 
-char s[30];
 
 void setup()
 {
   Serial.begin(9600);
-  Serial.print("start\n");
+  Serial.print("init\n");
 
   ZPC_ArduinoInit();
 
@@ -87,12 +112,14 @@ void setup()
     ZPC_MemWrite(address + i, program[i]);
   }
 
-  for (uint16_t i = 0x2045+0x00f9; i < 0x2045+0x015d; i++)
-  {
-    uint8_t read_data = ZPC_MemRead(address + i);
-    //sprintf(s, "%02x ", read_data); //Should be equal to data
-    Serial.write(read_data);
-  }
+  // for (uint16_t i = 0x2045+0x00f9; i < 0x2045+0x015d; i++)
+  // {
+  //   uint8_t read_data = ZPC_MemRead(address + i);
+  //   //sprintf(s, "%02x ", read_data); //Should be equal to data
+  //   Serial.write(read_data);
+  // }
+  ZPC_IO_Serial_PrintMemory(0x2045+0x00f9, 0x2045+0x015d);
+  Serial.print("Start\n");
 
   pinMode(CLK, OUTPUT);
 
@@ -110,9 +137,11 @@ void setup()
 uint8_t W = 0;
 uint8_t R = 0;
 uint8_t IO = 0;
+uint8_t M1 = 0;
 
 uint16_t address = 0xffff;
 uint8_t data = 0xff;
+uint8_t int_vector = 0xff;
 
 uint32_t start_time = millis();
 
@@ -121,6 +150,7 @@ void loop()
   if (Serial.available())
   {
     digitalWrite(INT_, LOW);
+    int_vector = IO_INT; 
   }
   else
   {
@@ -130,6 +160,7 @@ void loop()
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
   R = !digitalRead(RD_);
+  M1 = !digitalRead(M1_);
 
   address = ZPC_GetAddress();
   data = ZPC_GetData();
@@ -154,7 +185,7 @@ void loop()
 
   if (IO)
   {
-    sprintf(s, "Address : %04x Data: %02x \n", address, data);
+    //sprintf(s, "Address : %04x Data: %02x \n", address, data);
     if (R)
     {
       // First tact of input cycle
@@ -195,10 +226,14 @@ void loop()
         ZPC_IO_Serial_WriteByte(data);
       }
     }
+    else if (M1){          //Type 2 interrupt
+      ZPC_DataSetOutput();
+      ZPC_SetData(int_vector);
+    }
     digitalWrite(BUSREQ_, LOW);
     digitalWrite(WAIT_RES_, LOW);
-    delayMicroseconds(50);
-    if (R)
+    delayMicroseconds(100);
+    if (R|M1)
     {
       ZPC_DataSetInputPullup();
     }
