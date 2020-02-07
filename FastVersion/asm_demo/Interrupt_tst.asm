@@ -2,26 +2,22 @@
     nop
     jp main
 main:   
-
-    ld a, "a"
-    out (0x01), a
-    in a, (0x01)
-    out (0x01), a
     im 1
     ei
     ld sp, 0xabcd
-    ld a, "a"
+    ld a, "b"
 
 loop:
-        //out (0x01), a 
-      jp loop
+    out (0x01), a 
+    jp loop
 
-    BLOCK 50, 0
+    out (0x01), a
+
+    BLOCK 0x32, 0
 
 
 ihdlr_serial:
     in a, (0x01)
-    out (0x01), a
     ei
     reti
 
