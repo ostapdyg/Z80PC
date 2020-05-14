@@ -52,7 +52,7 @@
 
 #define WAIT_RES_ 47 
 
-#define USER 13
+#define USER_LED 13
 
 #define M1_ 15
 
