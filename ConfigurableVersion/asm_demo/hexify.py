@@ -9,13 +9,12 @@ def assemblify(filename, asm="sjasmplus"):
 
     
 
-def hexify(binary:str, *others:str):
+def hexify(binary):
 
     with open(binary, 'rb') as f:
+        
         hexcode = f.read().hex()
-    for other in others:
-        with open(other, 'rb') as f:
-            hexcode += f.read().hex()
+    
     formatted = sub("(?m)(..)(?!$)", "0x\\g<1>, ", hexcode) #Still need to add 0x to the last byte though!
     return f"{formatted[:-2]}0x{formatted[-2:]}" 
 #findall("..", hexcode)
@@ -38,18 +37,12 @@ def jinjify(hexcode):
 def main():
     
     #print(f"{sys.argv[1]}")
-    # assemblify(f"{sys.argv[1]}.asm")
-    # jinjify(hexify(f"{sys.argv[1]}.bin"))
-    assemblify("S210718.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
-    assemblify("basic.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
-
-    jinjify(hexify("S210718.bin", "basic.bin"))
-    
-    platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
+    assemblify(f"{sys.argv[1]}.asm")
+    jinjify(hexify(f"{sys.argv[1]}.bin"))
     os.chdir("../")
-    os.system(f"{platformio} run")
-    os.system(f"{platformio} run --target upload")
-    os.system(f"{platformio} device monitor")
+    os.system("platformio run")
+    os.system("platformio run --target upload")
+    os.system("platformio device monitor")
 
     
 if __name__ == "__main__":

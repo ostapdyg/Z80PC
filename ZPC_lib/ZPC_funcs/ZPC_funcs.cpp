@@ -128,9 +128,13 @@ uint8_t ZPC_MemRead(uint16_t address)
 
 void ZPC_ArduinoInit()
 {
-    //TODO: Implement this function
-    pinMode(WR_, OUTPUT);
-    digitalWrite(WR_, HIGH);
+    // Set-up bus request as LOW: cut-off processor from bus
+    pinMode(BUSREQ_, OUTPUT);
+    digitalWrite(BUSREQ_, LOW);
+
+    // Set pull-up for WR_, RD_, MREQ_, RESET
+    pinMode(WR_, OUTPUT); // set WR_ pin mode to output
+    digitalWrite(WR_, HIGH); // set WR_ to inactive (negative logic)
 
     pinMode(MREQ_, OUTPUT);
     digitalWrite(MREQ_, HIGH);
@@ -140,37 +144,46 @@ void ZPC_ArduinoInit()
     
     pinMode(RESET_, OUTPUT);
     digitalWrite(RESET_, HIGH);
-
-    pinMode(WAIT_RES_, OUTPUT);
-    digitalWrite(WAIT_RES_, LOW);
-
+    // Set CLK
     pinMode(CLK, OUTPUT);
     digitalWrite(CLK, LOW);
+    // Set pull-up for Address and Data buss
     ZPC_AddressSetInputPullup();
     ZPC_DataSetInputPullup();
+    // Activate IO RS trigger
+    pinMode(WAIT_RES_, OUTPUT);  //!!
+    digitalWrite(WAIT_RES_, LOW);//!!
 
-    pinMode(INT_, INPUT_PULLUP);
-    pinMode(INT_, OUTPUT);
+    // Set interrupts to HIGH; Set High before output to avoid bugs
+        // pinMode(INT_, INPUT_PULLUP);//!!
     digitalWrite(INT_, HIGH);
+    pinMode(INT_, OUTPUT);
+        // digitalWrite(INT_, HIGH);
 
+    // Set BUSACK_ and WAIT_ to input
     pinMode(BUSACK_, INPUT);
     pinMode(WAIT_, INPUT);
-    pinMode(BUSREQ_, INPUT_PULLUP);
-    pinMode(BUSREQ_, OUTPUT);
-    digitalWrite(BUSREQ_, HIGH);
+
+        // pinMode(BUSREQ_, INPUT_PULLUP);//!!
+        // pinMode(BUSREQ_, OUTPUT);//!!
+        // digitalWrite(BUSREQ_, HIGH);//!!
 
 }
 
 void ZPC_ProcStart(){
+
   ZPC_AddressSetInputPullup();
   ZPC_DataSetInputPullup();
   pinMode(MREQ_, INPUT);                   // Configure MREQ_ as input with pull-up
   pinMode(RD_, INPUT);                     // Configure RD_ as input with pull-up
   pinMode(WR_, INPUT);
-  digitalWrite(WAIT_RES_, LOW);            //Set the RS trigger
+
+  // Set IO RS trigger to continue
+  digitalWrite(WAIT_RES_, LOW);
   digitalWrite(WAIT_RES_, HIGH);
 
-  pinMode(BUSREQ_, OUTPUT);
+//   pinMode(BUSREQ_, OUTPUT); //!!
+  // Give Z80 access to buss
   digitalWrite(BUSREQ_, HIGH);
   
 
