@@ -23,3 +23,8 @@ RunningBasic/.pio/
 
 .vscode/settings.json
 .vscode/c_cpp_properties.json
+ConfigurableVersion/basic/hexify.py
+ConfigurableVersion/basic/hexify.py
+FastVersion/basic/hexify.py
+FastVersion/platformio.ini
+ShowMemory/platformio.ini

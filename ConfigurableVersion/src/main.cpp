@@ -94,7 +94,7 @@ void ZPC_ClockConfig()
 
   TIMSK1 = 0;
 
-  OCR1A = 39;
+  OCR1A = 399;
 }
 
 
@@ -209,6 +209,7 @@ void loop()
     else if (W)
     {
       uint8_t port = address & 0xff;
+      // ZPC_IO_Serial_WriteByte(data);
       switch (port)
       {
       case 0x0a:
