@@ -63,12 +63,12 @@
 void ZPC_Displayer::print_reg(uint8_t reg)
 {
   char buf[8];
-  sprintf(buf, "%s", reg_names[reg]);
-  Serial.print(buf);
+  sprintf(buf, "%s", reg_names[reg/2]);
+  // Serial.print(buf);
   _print(buf);
 
-  sprintf(buf, "%04X", reg_data[reg]);
-  Serial.print(buf);
+  sprintf(buf, "%02X%02X", reg_data[reg], reg_data[reg+1]);
+  // Serial.print(buf);
 
   // lcd.drawBitmap(colon, 3, 1);
   _print_colon();
@@ -80,7 +80,7 @@ void ZPC_Displayer::print_ram_row(uint8_t i)
   if (i > 4)
     return;
   char buf[8];
-  _next_line(i);
+  _next_line(i + 1);
   sprintf(buf, "%04X", ram_addr + i * 4);
   _print(buf);
   _print_colon();
@@ -96,12 +96,13 @@ void ZPC_Displayer::display_ram()
 {
   for (int i = 0; i < 5; i++)
   {
-    print_ram_row(i+1);
+    print_ram_row(i);
   }
 }
 
 void ZPC_Displayer::display_header()
 {
+  _next_line(0);
   _print_space();
   print_reg(cur_reg1);
   _print_space();
@@ -129,6 +130,10 @@ void ZPC_Displayer::update_ram(uint8_t *data)
   // digitalWrite(BUSREQ_, HIGH);
   memcpy(ram_data, data, ram_size*sizeof(uint8_t));
 }
+
+void ZPC_Displayer::set_register(uint8_t reg, uint8_t data){
+    *((uint8_t*)(reg_data) + reg) = data;
+} 
 
 void ZPC_Displayer::update_regs(uint8_t *regs)
 {

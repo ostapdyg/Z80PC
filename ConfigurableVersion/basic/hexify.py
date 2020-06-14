@@ -56,7 +56,7 @@ def main():
     # platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
     # platformio = "platformio"
     os.chdir("../")
-    os.system(f"{PLATFORMIO_PATH} run")
+    # os.system(f"{PLATFORMIO_PATH} run")
     os.system(f"{PLATFORMIO_PATH} run --target upload")
     os.system(f"{PLATFORMIO_PATH} device monitor")
 
