@@ -1,6 +1,10 @@
     output "benchmark.bin", t 
     nop
     jp main
+
+
+
+    
 main:
     ld a, 1
 
@@ -13,8 +17,8 @@ loop:
     cp h
     jp nz, loop
 
-    out (0x0f), a
-    out (0x01), a
+    ; out (0x0f), a
+    ; out (0x01), a
     inc a
     jp lp_outer
 

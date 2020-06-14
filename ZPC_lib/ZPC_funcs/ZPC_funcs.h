@@ -40,8 +40,15 @@ uint16_t ZPC_GetAddress();
 //Write aone byte to RAM
 void ZPC_MemWrite(uint16_t address, uint8_t data);
 
+// Copy data from src in Arduino to dest in RAM
+void ZPC_MemWriteBlock(uint16_t dest, uint8_t *src, uint16_t size);
+
 //Read one byte from RAM
 uint8_t ZPC_MemRead(uint16_t address);
+
+// Copy data from src in RAM to dest in Arduino
+void ZPC_MemReadBlock(uint8_t *dest, uint16_t src, uint16_t size);
+
 
 //Initialize Z80 control pins
 void ZPC_ArduinoInit(void);

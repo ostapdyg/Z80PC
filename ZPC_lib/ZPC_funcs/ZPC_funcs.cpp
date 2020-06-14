@@ -2,6 +2,7 @@
 #include "ZPC_funcs.h"
 
 
+
 __inline uint16_t __reverse(uint16_t reversee, uint8_t bitcount)
 {
     uint8_t i;
@@ -124,6 +125,24 @@ uint8_t ZPC_MemRead(uint16_t address)
     return read_data;
 }
 
+// Copy data from src in RAM to dest in Arduino
+void ZPC_MemReadBlock(uint8_t *dest, uint16_t src, uint16_t size)
+{
+  for (uint16_t p = 0; p < size; p++)
+  {
+    *(dest + p) = ZPC_MemRead(src + p);
+  }
+}
+
+// Copy data from src in Arduino to dest in RAM
+void ZPC_MemWriteBlock(uint16_t dest, uint8_t *src, uint16_t size)
+{
+  for (uint16_t p = 0; p < size; p++)
+  {
+    ZPC_MemWrite(dest + p, *(src + p));
+  }
+}
+
 
 void ZPC_ArduinoInit()
 {
@@ -190,3 +209,4 @@ void ZPC_ProcStart(){
 
 
 }
+

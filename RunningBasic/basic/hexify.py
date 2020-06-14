@@ -3,6 +3,10 @@ import jinja2
 import os
 import sys
 
+ASM_PATH = "sjasmplus"
+PLATFORMIO_PATH = "platformio"
+
+
 def assemblify(filename, asm="sjasmplus"):
     
     os.system(f"{asm} {filename} --lst")
@@ -40,17 +44,16 @@ def main():
     #print(f"{sys.argv[1]}")
     # assemblify(f"{sys.argv[1]}.asm")
     # jinjify(hexify(f"{sys.argv[1]}.bin"))
-    assemblify("S210718.asm")
-    assemblify("basic.asm")
+    assemblify("S210718.asm", ASM_PATH)
+    assemblify("basic.asm", ASM_PATH)
 
     jinjify(hexify("S210718.bin", "basic.bin"))
     
     os.chdir("../")
-    os.system("platformio run")
-    os.system("platformio run --target upload")
-    os.system("platformio device monitor")
+    os.system(f"{PLATFORMIO_PATH} run")
+    os.system(f"{PLATFORMIO_PATH} run --target upload")
+    os.system(f"{PLATFORMIO_PATH} device monitor")
 
-    
 if __name__ == "__main__":
     
     # result = hexify("simple.bin")
