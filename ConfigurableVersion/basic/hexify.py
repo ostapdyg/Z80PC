@@ -40,12 +40,15 @@ def main():
     #print(f"{sys.argv[1]}")
     # assemblify(f"{sys.argv[1]}.asm")
     # jinjify(hexify(f"{sys.argv[1]}.bin"))
-    assemblify("S210718.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
-    assemblify("basic.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
+    # assemblify("S210718.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
+    # assemblify("basic.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
+    assemblify("S210718.asm")
+    assemblify("basic.asm")
 
     jinjify(hexify("S210718.bin", "basic.bin"))
-    
-    platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
+
+    # platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
+    platformio = "platformio"
     os.chdir("../")
     os.system(f"{platformio} run")
     os.system(f"{platformio} run --target upload")

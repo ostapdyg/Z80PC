@@ -1,5 +1,6 @@
 #ifndef ZPC_FUNCS_PROTO1
 #define ZPC_FUNCS_PROTO1
+#include "Arduino.h"
 #include "ZPC_pinout.h"
 
 

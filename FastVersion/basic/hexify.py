@@ -3,6 +3,10 @@ import jinja2
 import os
 import sys
 
+ASM_PATH = "sjasmplus"
+PLATFORMIO_PATH = "platformio"
+
+
 def assemblify(filename, asm="sjasmplus"):
     
     os.system(f"{asm} {filename} --lst")
@@ -40,16 +44,20 @@ def main():
     #print(f"{sys.argv[1]}")
     # assemblify(f"{sys.argv[1]}.asm")
     # jinjify(hexify(f"{sys.argv[1]}.bin"))
-    assemblify("S210718.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
-    assemblify("basic.asm", "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\"")
+
+
+    # asm_path = "\"C:\\Program Files\\sjasmplus-1.14.3.win\\sjasmplus.exe\""
+
+    assemblify("S210718.asm", ASM_PATH)
+    assemblify("basic.asm", ASM_PATH)
 
     jinjify(hexify("S210718.bin", "basic.bin"))
     
-    platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
+    # platformio = "C:\\Users\\Volodya\\.platformio\\penv\\Scripts\\platformio.exe"
     os.chdir("../")
-    os.system(f"{platformio} run")
-    os.system(f"{platformio} run --target upload")
-    os.system(f"{platformio} device monitor")
+    os.system(f"{PLATFORMIO_PATH} run")
+    os.system(f"{PLATFORMIO_PATH} run --target upload")
+    os.system(f"{PLATFORMIO_PATH} device monitor")
 
     
 if __name__ == "__main__":
