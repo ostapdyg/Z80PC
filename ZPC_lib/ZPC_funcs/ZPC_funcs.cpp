@@ -1,4 +1,3 @@
-#include "Arduino.h"
 
 #include "ZPC_funcs.h"
 

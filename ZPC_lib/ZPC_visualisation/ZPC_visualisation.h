@@ -2,7 +2,9 @@
 #define ZPC_VISUALISATION_H
 
 #include <PCD8544.h>
-#include "ZPC_funcs.h"
+#include "Arduino.h"
+
+// #include "ZPC_funcs.h"
 
 #define USE_LCD
 
