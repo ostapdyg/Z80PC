@@ -42,52 +42,6 @@ uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x50
     0x00};
 
-// uint8_t ZPC_IO_Serial_ReadByte()
-// {
-//   // while (!Serial.available())
-//   //   ;
-//   return Serial.available() ? Serial.read() : 0;
-// }
-
-// uint8_t ZPC_IO_Serial_WriteByte(uint8_t data)
-// {
-//   Serial.write(data);
-//   return 0;
-// }
-
-// uint8_t ZPC_IO_ArduinoROM_ReadByte(uint16_t address)
-// {
-//   return EEPROM.read(address);
-// }
-
-// uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
-// {
-//   EEPROM.write(address, data);
-//   return 0;
-// }
-
-// //0x2045+0x00f9
-// //0x2045+0x015d
-
-// void ZPC_IO_Serial_PrintMemory(uint16_t from, uint16_t to)
-// {
-//   for (uint16_t i = from; i < to; i++)
-//   {
-//     uint8_t read_data = ZPC_MemRead(i);
-//     sprintf(s, "|%02x - %c|", read_data, read_data);
-//     // Serial.print(s);
-//     Serial.print(s);
-//   }
-//   Serial.print("\n");
-//   // for (uint16_t i = from; i < to; i++)
-//   // {
-//   //   uint8_t read_data = ZPC_MemRead(i);
-//   //   sprintf(s, "%02x ", read_data);
-//   //   // Serial.print(s);
-//   //   Serial.write(s);
-//   // }
-// }
-
 void ZPC_ClockConfig()
 {
   pinMode(CLK, OUTPUT);
@@ -101,21 +55,7 @@ void ZPC_ClockConfig()
   OCR1A = 399;
 }
 
-// void ZPC_ReadRAM(uint8_t *dest, uint16_t from, uint16_t size)
-// {
-//   for (uint16_t p = 0; p < size; p++)
-//   {
-//     *(dest + p) = ZPC_MemRead(from + p);
-//   }
-// }
 
-// void ZPC_WriteRAM(uint16_t dest, uint8_t *src, uint16_t size)
-// {
-//   for (uint16_t p = 0; p < size; p++)
-//   {
-//     ZPC_MemWrite(dest + p, *(src + p));
-//   }
-// }
 inline void ZPC_DisplayRAM(ZPC_Displayer* displayer){
   ZPC_MemReadBlock(displayer->ram_data, displayer->ram_addr, displayer->ram_size);
   displayer->refresh();
@@ -205,30 +145,14 @@ void setup()
 
   ZPC_ArduinoInit();
 
-  // uint16_t address = 0x00;
-  // for (uint16_t i = 0; i < PROG_SIZE; i++)
-  // {
-  //   ZPC_MemWrite(address + i, program[i]);
-  // }
   ZPC_MemWriteBlock(0, program, PROG_SIZE);
 
   // ZPC_MemReadBlock(displayer.ram_data, displayer.ram_addr, displayer.ram_size);
   // displayer.refresh();
-  displayer.set_register(rA, 0xa);
+
+  // displayer.set_register(rA, 0xa);
   ZPC_DisplayRAM(&displayer);
 
-  // ZPC_
-
-  // for(uint16_t i = 0; i < disp.ram_size)
-
-  // for (uint16_t i = 0; i < 28; i++)
-  // {
-  //   uint8_t read_data = ZPC_MemRead(i);
-  //   sprintf(s, "%02x ", read_data); //Should be equal to data
-  //   Serial.print(s);
-  // }
-
-  // ZPC_IO_Serial_PrintMemory(0, 28);
   Serial.print("Start\n");
 
   pinMode(USER_LED, OUTPUT);

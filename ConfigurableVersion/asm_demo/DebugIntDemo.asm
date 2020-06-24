@@ -50,79 +50,51 @@ ihdlr_debug:
     ld (old_sp), sp
     push af
     push hl
-    ; push ix
-    ; ld ix
-
     out (0x30), a   ;A
-
     push af
     pop hl
-
     ld (reg_buffer), hl     ;To output AF
     ld a, (reg_buffer)      ;f
     out (0x31), a
-
-
     ld a, b
     out (0x32), a
-
     ld a, c
     out (0x33), a
-
     ld a, d
     out (0x34), a
-
     ld a, e
     out (0x35), a
-
     ld (reg_buffer), hl     ;To output HL
     ld a, (reg_buffer+1)    ;Hlh
     out (0x36), a
     ld a, (reg_buffer)      ;HLl
     out (0x37), a
-
     ld (reg_buffer), ix     ;To output IX
     ld a, (reg_buffer+1)    ;IXh
     out (0x38), a
     ld a, (reg_buffer)      ;IXl
     out (0x39), a
-
     ld (reg_buffer), IY     ;To output IY
     ld a, (reg_buffer+1)    ;IYh
     out (0x3a), a
     ld a, (reg_buffer)      ;IYl
     out (0x3b), a
-
     ld (reg_buffer), SP     ;To output SP
     ld a, (reg_buffer+1)    ;SPh
     out (0x3c), a
     ld a, (reg_buffer)      ;SPl
     out (0x3d), a
-
     ld hl, (old_sp)
-
-    ; ld (reg_buffer), (hl)     ;8-bit load, for some reason
-    ; inc hl
-    ; ld (reg_buffer + 1), (hl)     ;second portion of PC
-    ; ld a, (reg_buffer+1)    ;PCh
-    ; out (0x3e), a
-    ; ld a, (reg_buffer)      ;PCl
-    ; out (0x3f), a
     inc hl
     ld a, (HL)      ;PCh
     out (0x3e), a
     dec hl
     ld a, (hl)
     out (0x3f), a
-
-
-    ; out
     out (0x40), a
-
     pop hl
     pop af
-
-    out (0x00), a           ;Wait to continue
+    ; out (0x00), a           ;Wait to continue
     ei
     reti
 reg_buffer .byte 0, 0;Buffer
