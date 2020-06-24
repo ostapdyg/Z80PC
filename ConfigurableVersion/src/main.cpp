@@ -15,6 +15,16 @@
 
 char s[30];
 
+uint8_t W = 0;
+uint8_t R = 0;
+uint8_t IO = 0;
+uint8_t M1 = 0;
+
+uint16_t address = 0xffff;
+uint8_t data = 0xff;
+uint8_t int_vector = 0xff;
+uint8_t mode  = 0b00;
+
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
     0x00, 0x00, 0x00, 0x00, //0x04
@@ -75,6 +85,7 @@ struct TQueue{
 };
 
 TQueue interrupts_q;
+TQueue serial_data_q;
 
 int TQueue_init(struct TQueue* q, size_t max_size){
   q->_data = (uint8_t*)malloc(max_size);
@@ -85,7 +96,7 @@ int TQueue_init(struct TQueue* q, size_t max_size){
 }
 
 int TQueue_push(struct TQueue* q, uint8_t data){
-  size_t new_tail = (q->tail+1)%q->max_size;
+  size_t new_tail = (q->tail + 1) % q->max_size;
   if(new_tail != q->head){
     q->tail = new_tail;
     q->_data[q->tail] = data;
@@ -126,7 +137,8 @@ inline void ZPC_DisplayRAM(ZPC_Displayer* displayer){
 
 
 // ------------------------------------------------------------------Event Handlers--------------------------------------------------------------------------------------
-uint8_t serial_input_buf = 0x00;
+// uint8_t serial_input_buf = 0x00;
+// uint8_t buf_has_data = 0;
 
 void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
 {
@@ -203,32 +215,58 @@ void ZPC_IO_HandleRead(uint8_t address)
   ZPC_SetData(data_in);
 }
 
-void ZPC_IO_HandleSerialCommand(uint8_t command){
+void ZPC_Serial_HandleCommand(uint8_t command){
     command &= ~(1<<7);
     switch(command){
       case 0x00:
-        break;
+        break; //DOTO
       default:
         break;
     }
 }
 
-void ZPC_IO_HandleSerialData(uint8_t serial_data) 
+void ZPC_Serial_HandleData(uint8_t serial_data) 
 {
-    serial_input_buf = serial_data; //Otherwise, treat as regular serial data
-                 
-
-
+    TQueue_push(&serial_data_q, serial_data);
+    TQueue_push(&interrupts_q, IO_INT);
 }
 
+void ZPC_IO_HandleSerial(){
+  if(Serial.available()){
+    uint8_t serial_input = Serial.read();
+    if (serial_input&(1<<7))  // Last bit set -> it is a command
+    {
+      ZPC_Serial_HandleCommand(serial_input);
+    }
+    else //Otherwise, treat as regular serial data
+    {
+      ZPC_Serial_HandleData(serial_input);
+    }    
+  }
+}
 
+uint8_t interrupt_in_progress = 0;
+uint8_t interrupt_vector = 0x00;
+void ZPC_HandleInterrupts(){
+  if(interrupt_in_progress){
+    if()
+  }
+  else{
+    if(!TQueue_empty(&interrupts_q)){
+      interrupt_vector = TQueue_pop(&interrupts_q);
+      digitalWrite(INT_, LOW);
+    }
+  }
+}
 // -----------------------------------------------------------------------Main code--------------------------------------------------------------------------------------
 void setup()
 {
   Serial.begin(9600);
   Serial.print("init\n");
 
-  TQueue_init(&interrupts_q, 16);
+  TQueue_init(&interrupts_q, 256);
+  TQueue_init(&serial_data_q, 256);
+
 
   displayer.begin();
 
@@ -257,32 +295,14 @@ void setup()
   digitalWrite(RESET_, HIGH);
 }
 
-uint8_t W = 0;
-uint8_t R = 0;
-uint8_t IO = 0;
-uint8_t M1 = 0;
 
-uint16_t address = 0xffff;
-uint8_t data = 0xff;
-uint8_t int_vector = 0xff;
-uint8_t mode  = 0b00;
 
 void loop()
 {
 
   // TODO: ugly, improve
-  
-  if(Serial.available()){
-    uint8_t serial_input = Serial.read();
-    if (serial_input&(1<<7))
-    {
-      ZPC_IO_HandleSerialCommand(serial_input);
-    }
-    else
-    {
-      ZPC_IO_HandleSerialData(serial_input);
-    }    
-  }
+  ZPC_Serial_Handle();
+
   // if (Serial.available())
   // {
   //   digitalWrite(INT_, LOW);
