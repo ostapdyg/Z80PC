@@ -15,9 +15,6 @@
 
 char s[30];
 
-static PCD8544 lcd(A0, A1, A2, A4, A3);
-static ZPC_Displayer displayer(lcd);
-
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
     0x00, 0x00, 0x00, 0x00, //0x04
@@ -42,24 +39,94 @@ uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x50
     0x00};
 
+
+
+// -----------------------------------------------------------------Clock Manipulation----------------------------------------------------------------------------------
 void ZPC_ClockConfig()
 {
   pinMode(CLK, OUTPUT);
 
-  TCCR1A = ((1 << COM1A0));
+  TCCR1A = (1 << COM1A0);
 
-  TCCR1B = ((1 << WGM12) | (1 << CS10));
+  TCCR1B = (1 << WGM12); //Set timer mode to CTC but do not start the timer.
 
   TIMSK1 = 0;
 
   OCR1A = 399;
+
 }
+
+inline void ZPC_ClockStop()
+{
+  TCCR1B &= ~(1 << CS10); // CS = 000, stop
+}
+
+inline void ZPC_ClockStart()
+{
+  TCNT1 = 0;
+  
+  TCCR1B |= (1 << CS10); // CS = 001, start without a prescaler
+}
+
+// ------------------------------------------------------------------Interrupt Queue------------------------------------------------------------------------------------
+struct TQueue{
+  uint8_t* _data;
+  size_t max_size, head, tail;
+};
+
+TQueue interrupts_q;
+
+int TQueue_init(struct TQueue* q, size_t max_size){
+  q->_data = (uint8_t*)malloc(max_size);
+  q->max_size = max_size;
+  q->head = 0;
+  q->tail = 0;
+  return 0;
+}
+
+int TQueue_push(struct TQueue* q, uint8_t data){
+  size_t new_tail = (q->tail+1)%q->max_size;
+  if(new_tail != q->head){
+    q->tail = new_tail;
+    q->_data[q->tail] = data;
+    return 0;
+  }
+  return -1;  
+}
+
+uint8_t TQueue_pop(struct TQueue* q){
+  size_t new_head = (q->head + 1)%q->max_size;
+
+  if(q->head != q->tail){
+    uint8_t res = q->_data[q->head];
+    q->head = new_head;
+    return res;
+  }
+  return 0xff;  //If empty
+}
+
+uint8_t TQueue_empty(struct TQueue* q){
+  return (q->head == q->tail);
+}
+
+// ------------------------------------------------------------------Interrupt management--------------------------------------------------------------------------------
+// inline void ZPC_
+
+
+// ----------------------------------------------------------------------Displayer---------------------------------------------------------------------------------------
+
+static PCD8544 lcd(A0, A1, A2, A4, A3);
+static ZPC_Displayer displayer(lcd);
 
 
 inline void ZPC_DisplayRAM(ZPC_Displayer* displayer){
   ZPC_MemReadBlock(displayer->ram_data, displayer->ram_addr, displayer->ram_size);
   displayer->refresh();
 }
+
+
+// ------------------------------------------------------------------Event Handlers--------------------------------------------------------------------------------------
+uint8_t serial_input_buf = 0x00;
 
 void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
 {
@@ -136,10 +203,32 @@ void ZPC_IO_HandleRead(uint8_t address)
   ZPC_SetData(data_in);
 }
 
+void ZPC_IO_HandleSerialCommand(uint8_t command){
+    command &= ~(1<<7);
+    switch(command){
+      case 0x00:
+        break;
+      default:
+        break;
+    }
+}
+
+void ZPC_IO_HandleSerialData(uint8_t serial_data) 
+{
+    serial_input_buf = serial_data; //Otherwise, treat as regular serial data
+                 
+
+
+}
+
+
+// -----------------------------------------------------------------------Main code--------------------------------------------------------------------------------------
 void setup()
 {
   Serial.begin(9600);
   Serial.print("init\n");
+
+  TQueue_init(&interrupts_q, 16);
 
   displayer.begin();
 
@@ -159,6 +248,7 @@ void setup()
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
   ZPC_ClockConfig();
+  ZPC_ClockStart(); // Mode 0 by default (Arduino clock source)
 
   ZPC_ProcStart();
 
@@ -175,21 +265,33 @@ uint8_t M1 = 0;
 uint16_t address = 0xffff;
 uint8_t data = 0xff;
 uint8_t int_vector = 0xff;
-
+uint8_t mode  = 0b00;
 
 void loop()
 {
 
   // TODO: ugly, improve
-  if (Serial.available())
-  {
-    digitalWrite(INT_, LOW);
-    int_vector = IO_INT;
+  
+  if(Serial.available()){
+    uint8_t serial_input = Serial.read();
+    if (serial_input&(1<<7))
+    {
+      ZPC_IO_HandleSerialCommand(serial_input);
+    }
+    else
+    {
+      ZPC_IO_HandleSerialData(serial_input);
+    }    
   }
-  else
-  {
-    digitalWrite(INT_, HIGH);
-  }
+  // if (Serial.available())
+  // {
+  //   digitalWrite(INT_, LOW);
+  //   int_vector = IO_INT;
+  // }
+  // else
+  // {
+  //   digitalWrite(INT_, HIGH);
+  // }
 
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
