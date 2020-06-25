@@ -196,7 +196,7 @@ void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
   }
 };
 
-void ZPC_IO_HandleRead(uint8_t address)
+uint8_t ZPC_IO_HandleRead(uint8_t address)
 {
   uint8_t data_in = 0xff;
   uint8_t port = address & 0xff;
@@ -211,8 +211,6 @@ void ZPC_IO_HandleRead(uint8_t address)
   default:
     data_in = ZPC_IO_Serial_ReadByte();
   }
-  ZPC_DataSetOutput();
-  ZPC_SetData(data_in);
 }
 
 void ZPC_Serial_HandleCommand(uint8_t command){
@@ -231,7 +229,7 @@ void ZPC_Serial_HandleData(uint8_t serial_data)
     TQueue_push(&interrupts_q, IO_INT);
 }
 
-void ZPC_IO_HandleSerial(){
+void ZPC_Serial_Handle(){
   if(Serial.available()){
     uint8_t serial_input = Serial.read();
     if (serial_input&(1<<7))  // Last bit set -> it is a command
@@ -247,17 +245,68 @@ void ZPC_IO_HandleSerial(){
 
 uint8_t interrupt_in_progress = 0;
 uint8_t interrupt_vector = 0x00;
-void ZPC_HandleInterrupts(){
+
+void ZPC_Interrupts_HandleSend(){
   if(interrupt_in_progress){
-    if()
+
   }
   else{
     if(!TQueue_empty(&interrupts_q)){
       interrupt_vector = TQueue_pop(&interrupts_q);
       digitalWrite(INT_, LOW);
+      interrupt_in_progress = 1;
     }
+    // else{
+    //   digitalWrite(INT_, HIGH);
+    // }
   }
 }
+
+
+
+uint8_t data_is_output = 0;
+// uint8_t data = 0x00;
+void ZPC_IO_Handle()
+{
+  if (IO)
+  {
+    if (R)
+    {
+      data = ZPC_IO_HandleRead(address);
+      data_is_output = 1;
+      // ZPC_DataSetOutput();
+      // ZPC_SetData(data);
+    }
+    else if (W)
+    {
+      ZPC_IO_HandleWrite(address, data);
+    }
+    else if (M1) //M1 + IO means interrupt vector request for type2 interrupt
+    {
+      data = interrupt_vector;
+      data_is_output = 1;
+      interrupt_in_progress = 0;    //Interrupt will end in next cycle
+    }
+    digitalWrite(BUSREQ_, LOW);
+    digitalWrite(WAIT_RES_, LOW);
+    if(data_is_output){
+      ZPC_DataSetOutput();
+      ZPC_SetData(data);
+    }
+  }
+  else// After IO cycle
+  {       
+    if(data_is_output){
+      ZPC_DataSetInputPullup();
+      data_is_output = 0;
+    }
+    digitalWrite(WAIT_RES_, HIGH);
+    digitalWrite(BUSREQ_, HIGH);
+  }
+}
+
+
+
 // -----------------------------------------------------------------------Main code--------------------------------------------------------------------------------------
 void setup()
 {
@@ -296,13 +345,12 @@ void setup()
 }
 
 
-
 void loop()
 {
 
-  // TODO: ugly, improve
+  // Done: ugly, improve
   ZPC_Serial_Handle();
-
+  ZPC_Interrupts_HandleSend();    //Check interrupt queue and set INT to 0 or 1 if neded
   // if (Serial.available())
   // {
   //   digitalWrite(INT_, LOW);
@@ -339,30 +387,31 @@ void loop()
     Serial.print(s);
   }
 
-  if (IO)
-  {
-    //sprintf(s, "Address : %04x Data: %02x \n", address, data);
-    if (R)
-    {
-      ZPC_IO_HandleRead(address);
-    }
-    else if (W)
-    {
-      ZPC_IO_HandleWrite(address, data);
-    }
-    else if (M1)
-    { //Type 2 interrupt
-      ZPC_DataSetOutput();
-      ZPC_SetData(int_vector);
-    }
-    digitalWrite(BUSREQ_, LOW);
-    digitalWrite(WAIT_RES_, LOW);
-    delayMicroseconds(100);
-    if (R | M1)
-    {
-      ZPC_DataSetInputPullup();
-    }
-    digitalWrite(WAIT_RES_, HIGH);
-    digitalWrite(BUSREQ_, HIGH);
-  }
+  // if (IO)
+  // {
+  //   //sprintf(s, "Address : %04x Data: %02x \n", address, data);
+  //   if (R)
+  //   {
+  //     ZPC_IO_HandleRead(address);
+  //   }
+  //   else if (W)
+  //   {
+  //     ZPC_IO_HandleWrite(address, data);
+  //   }
+  //   else if (M1)
+  //   { //Type 2 interrupt
+  //     ZPC_DataSetOutput();
+  //     ZPC_SetData(int_vector);
+  //   }
+  //   digitalWrite(BUSREQ_, LOW);
+  //   digitalWrite(WAIT_RES_, LOW);
+  //   delayMicroseconds(100);
+  //   if (R | M1)
+  //   {
+  //     ZPC_DataSetInputPullup();
+  //   }
+  //   digitalWrite(WAIT_RES_, HIGH);
+  //   digitalWrite(BUSREQ_, HIGH);
+  // }
+  ZPC_IO_Handle();
 }
