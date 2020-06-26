@@ -8,9 +8,9 @@
 
 
 
-void ZPC_IO_HandleWrite(uint16_t address, uint8_t data);
+// void ZPC_IO_HandleWrite(uint16_t address, uint8_t data);
 
-void ZPC_IO_HandleRead(uint8_t address);
+// void ZPC_IO_HandleRead(uint8_t address);
 
 uint8_t ZPC_IO_Serial_ReadByte();
 
@@ -20,6 +20,6 @@ uint8_t ZPC_IO_ArduinoROM_ReadByte(uint16_t address);
 
 uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data);
 
-void ZPC_IO_Serial_PrintMemory(uint16_t from, uint16_t to);
+// void ZPC_IO_Serial_PrintMemory(uint16_t from, uint16_t to);
 
 #endif

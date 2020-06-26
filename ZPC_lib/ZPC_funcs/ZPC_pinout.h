@@ -56,5 +56,9 @@
 
 #define M1_ 15
 
+
+
+#define EXT_CLOCK 5
+
 #endif
 

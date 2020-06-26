@@ -105,21 +105,29 @@ struct ZPC_Displayer
   inline void _print(const char *str)
   {
     lcd.print(str);
+    Serial.print(str);
+
   }
 
   inline void _print_colon()
   {
     lcd.drawBitmap(colon, 3, 1);
+        Serial.print(":");
+
   }
 
   inline void _print_space()
   {
     lcd.drawBitmap(space, 2, 1);
+        Serial.print(' ');
+
   }
 
   inline void _next_line(uint8_t i)
   {
     lcd.setCursor(0, i);
+        Serial.print('\n');
+
   }
 
 #else

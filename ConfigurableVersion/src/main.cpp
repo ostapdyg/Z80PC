@@ -9,7 +9,7 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (0)
+#define DEBUG_MODE (IO)
 
 #define IO_INT 0x04
 
@@ -23,7 +23,6 @@ uint8_t M1 = 0;
 uint16_t address = 0xffff;
 uint8_t data = 0xff;
 uint8_t int_vector = 0xff;
-uint8_t mode  = 0b00;
 
 uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x00
@@ -49,10 +48,32 @@ uint8_t program_TEMPLATE[] = {
     0x00, 0x00, 0x00, 0x00, //0x50
     0x00};
 
-
-
 // -----------------------------------------------------------------Clock Manipulation----------------------------------------------------------------------------------
-void ZPC_ClockConfig()
+enum clock_mode_en
+{
+  CLK_TIMER = 0,
+  CLK_MAINLOOP = 1,
+  CLK_BUTTON = 2,
+  CLK_NONE = 3
+};
+enum clock_mode_en clock_mode;
+
+void _waitSignal(uint8_t pin, int state)
+{
+  for (;;)
+  {
+    while (digitalRead(pin) != state)
+    {
+    }
+    delay(10);
+    if (digitalRead(pin) == state)
+    {
+      return;
+    }
+  }
+}
+
+void ZPC_Clock_Config()
 {
   pinMode(CLK, OUTPUT);
 
@@ -64,77 +85,121 @@ void ZPC_ClockConfig()
 
   OCR1A = 399;
 
+  clock_mode = CLK_TIMER;
+  // clock_mode = CLK_MAINLOOP;
 }
 
-inline void ZPC_ClockStop()
+inline void ZPC_Clock_Stop()
 {
   TCCR1B &= ~(1 << CS10); // CS = 000, stop
 }
 
-inline void ZPC_ClockStart()
+inline void ZPC_Clock_Start()
 {
   TCNT1 = 0;
-  
+
   TCCR1B |= (1 << CS10); // CS = 001, start without a prescaler
 }
 
+void ZPC_Clock_Handle()
+{
+  switch (clock_mode)
+  {
+  case CLK_TIMER:
+    break;
+  case CLK_MAINLOOP:
+    // delay(1);
+    digitalWrite(CLK, LOW);
+    delay(1);
+    digitalWrite(CLK, HIGH);
+    break;
+  case CLK_BUTTON:
+    _waitSignal(EXT_CLOCK, LOW);
+    digitalWrite(CLK, LOW);
+    _waitSignal(EXT_CLOCK, HIGH);
+    digitalWrite(CLK, HIGH);
+    break;
+  case CLK_NONE:
+    break;
+  }
+}
+
+void ZPC_Clock_Change(enum clock_mode_en new_mode)
+{
+  if (clock_mode == CLK_TIMER)
+  {
+    ZPC_Clock_Stop();
+  }
+  if (new_mode == CLK_TIMER)
+  {
+    ZPC_Clock_Start();
+  }
+  clock_mode = new_mode;
+  return;
+}
+
 // ------------------------------------------------------------------Interrupt Queue------------------------------------------------------------------------------------
-struct TQueue{
-  uint8_t* _data;
+struct TQueue
+{
+  uint8_t *_data;
   size_t max_size, head, tail;
 };
 
 TQueue interrupts_q;
 TQueue serial_data_q;
 
-int TQueue_init(struct TQueue* q, size_t max_size){
-  q->_data = (uint8_t*)malloc(max_size);
+int TQueue_init(struct TQueue *q, size_t max_size)
+{
+  q->_data = (uint8_t *)malloc(max_size);
   q->max_size = max_size;
   q->head = 0;
   q->tail = 0;
   return 0;
 }
 
-int TQueue_push(struct TQueue* q, uint8_t data){
+int TQueue_push(struct TQueue *q, uint8_t data)
+{
   size_t new_tail = (q->tail + 1) % q->max_size;
-  if(new_tail != q->head){
+  if (new_tail != q->head)
+  {
     q->tail = new_tail;
     q->_data[q->tail] = data;
     return 0;
   }
-  return -1;  
+  return -1;
 }
 
-uint8_t TQueue_pop(struct TQueue* q){
-  size_t new_head = (q->head + 1)%q->max_size;
+uint8_t TQueue_pop(struct TQueue *q)
+{
+  size_t new_head = (q->head + 1) % q->max_size;
 
-  if(q->head != q->tail){
+  if (q->head != q->tail)
+  {
     uint8_t res = q->_data[q->head];
     q->head = new_head;
     return res;
   }
-  return 0xff;  //If empty
+  return 0xff; //If empty
 }
 
-uint8_t TQueue_empty(struct TQueue* q){
+uint8_t TQueue_empty(struct TQueue *q)
+{
   return (q->head == q->tail);
 }
 
 // ------------------------------------------------------------------Interrupt management--------------------------------------------------------------------------------
 // inline void ZPC_
 
-
 // ----------------------------------------------------------------------Displayer---------------------------------------------------------------------------------------
 
 static PCD8544 lcd(A0, A1, A2, A4, A3);
 static ZPC_Displayer displayer(lcd);
 
-
-inline void ZPC_DisplayRAM(ZPC_Displayer* displayer){
+inline void ZPC_DisplayRAM(ZPC_Displayer *displayer)
+{
   ZPC_MemReadBlock(displayer->ram_data, displayer->ram_addr, displayer->ram_size);
   displayer->refresh();
 }
-
 
 // ------------------------------------------------------------------Event Handlers--------------------------------------------------------------------------------------
 // uint8_t serial_input_buf = 0x00;
@@ -146,19 +211,20 @@ void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
   // ZPC_IO_Serial_WriteByte(data);
   switch (port)
   {
-  case 0x00:  // Wait till a key is pressed
+  case 0x00: // Wait till a key is pressed
     sprintf(s, "Press any key to continue:\n");
     Serial.print(s);
-    while(!Serial.available());
+    while (!Serial.available())
+      ;
     Serial.read();
     break;
-  case 0x0a:  // Save byte to ROM
+  case 0x0a: // Save byte to ROM
     ZPC_IO_ArduinoROM_WriteByte(address, data);
     break;
-  case 0x01:  // Print byte as char
+  case 0x01: // Print byte as char
     ZPC_IO_Serial_WriteByte(data);
     break;
-  case 0x02:  // Print byte as hex
+  case 0x02: // Print byte as hex
     sprintf(s, "%02X", data);
     Serial.print(s);
     break;
@@ -168,27 +234,27 @@ void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
     Serial.print(s);
     running_time = millis();
     break;
-  case 0x30:  //Debug output: A
-  case 0x31:  //Debug output: F
-  case 0x32:  //Debug output: B
-  case 0x33:  //Debug output: C
-  case 0x34:  //Debug output: D
-  case 0x35:  //Debug output: E
-  case 0x36:  //Debug output: H
-  case 0x37:  //Debug output: L
-  case 0x38:  //Debug output: IXh
-  case 0x39:  //Debug output: IXl
-  case 0x3a:  //Debug output: IYh
-  case 0x3b:  //Debug output: IYl
-  case 0x3c:  //Debug output: SPh
-  case 0x3d:  //Debug output: SPl
-  case 0x3e:  //Debug output: PCh
-  case 0x3f:  //Debug output: PCl
+  case 0x30: //Debug output: A
+  case 0x31: //Debug output: F
+  case 0x32: //Debug output: B
+  case 0x33: //Debug output: C
+  case 0x34: //Debug output: D
+  case 0x35: //Debug output: E
+  case 0x36: //Debug output: H
+  case 0x37: //Debug output: L
+  case 0x38: //Debug output: IXh
+  case 0x39: //Debug output: IXl
+  case 0x3a: //Debug output: IYh
+  case 0x3b: //Debug output: IYl
+  case 0x3c: //Debug output: SPh
+  case 0x3d: //Debug output: SPl
+  case 0x3e: //Debug output: PCh
+  case 0x3f: //Debug output: PCl
     // sprintf(s, "Debug: %X - %02X\n", port&0xf, data);
     // Serial.print(s);
     displayer.set_register(port - 0x30, data);
     break;
-  case 0x40:  //Debug output: refresh displayer
+  case 0x40: //Debug output: refresh displayer
     displayer.refresh();
     break;
   default:
@@ -196,7 +262,8 @@ void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
   }
 };
 
-uint8_t ZPC_IO_HandleRead(uint8_t address)
+//Returns data to feed to Z80
+uint8_t ZPC_IO_HandleRead(uint16_t address)
 {
   uint8_t data_in = 0xff;
   uint8_t port = address & 0xff;
@@ -206,52 +273,59 @@ uint8_t ZPC_IO_HandleRead(uint8_t address)
     data_in = ZPC_IO_ArduinoROM_ReadByte(address);
     break;
   case 0x01:
-    data_in = ZPC_IO_Serial_ReadByte();
+    // data_in = ZPC_IO_Serial_ReadByte(); //Todo: pop 1 byte from serial queue
+    data_in = TQueue_pop(&serial_data_q);
     break;
   default:
-    data_in = ZPC_IO_Serial_ReadByte();
+    // data_in = ZPC_IO_Serial_ReadByte(); //Todo: pop 1 byte from serial queue
+    data_in = TQueue_pop(&serial_data_q);
+  }
+  return data_in;
+}
+
+void ZPC_Serial_HandleCommand(uint8_t command)
+{
+  command &= ~(1 << 7);
+  switch (command)
+  {
+  case 0x00:
+    break; //DOTO
+  default:
+    break;
   }
 }
 
-void ZPC_Serial_HandleCommand(uint8_t command){
-    command &= ~(1<<7);
-    switch(command){
-      case 0x00:
-        break; //DOTO
-      default:
-        break;
-    }
-}
-
-void ZPC_Serial_HandleData(uint8_t serial_data) 
+void ZPC_Serial_HandleData(uint8_t serial_data)
 {
-    TQueue_push(&serial_data_q, serial_data);
-    TQueue_push(&interrupts_q, IO_INT);
+  TQueue_push(&serial_data_q, serial_data);
+  TQueue_push(&interrupts_q, IO_INT);
 }
 
-void ZPC_Serial_Handle(){
-  if(Serial.available()){
+void ZPC_Serial_Handle()
+{
+  if (Serial.available())
+  {
     uint8_t serial_input = Serial.read();
-    if (serial_input&(1<<7))  // Last bit set -> it is a command
+    if (serial_input & (1 << 7)) // Last bit set -> it is a command
     {
       ZPC_Serial_HandleCommand(serial_input);
     }
     else //Otherwise, treat as regular serial data
     {
       ZPC_Serial_HandleData(serial_input);
-    }    
+    }
   }
 }
 
 uint8_t interrupt_in_progress = 0;
 uint8_t interrupt_vector = 0x00;
 
-void ZPC_Interrupts_HandleSend(){
-  if(interrupt_in_progress){
-
-  }
-  else{
-    if(!TQueue_empty(&interrupts_q)){
+void ZPC_Interrupts_HandleSend()
+{
+  if (!interrupt_in_progress)
+  {
+    if (!TQueue_empty(&interrupts_q))
+    {
       interrupt_vector = TQueue_pop(&interrupts_q);
       digitalWrite(INT_, LOW);
       interrupt_in_progress = 1;
@@ -262,9 +336,8 @@ void ZPC_Interrupts_HandleSend(){
   }
 }
 
-
-
 uint8_t data_is_output = 0;
+uint8_t io_delay = 0;
 // uint8_t data = 0x00;
 void ZPC_IO_Handle()
 {
@@ -285,18 +358,21 @@ void ZPC_IO_Handle()
     {
       data = interrupt_vector;
       data_is_output = 1;
-      interrupt_in_progress = 0;    //Interrupt will end in next cycle
+      interrupt_in_progress = 0; //Interrupt will end in next cycle
+      digitalWrite(INT_, HIGH);
     }
     digitalWrite(BUSREQ_, LOW);
     digitalWrite(WAIT_RES_, LOW);
-    if(data_is_output){
+    if (data_is_output)
+    {
       ZPC_DataSetOutput();
       ZPC_SetData(data);
     }
   }
-  else// After IO cycle
-  {       
-    if(data_is_output){
+  else
+  {
+    if (data_is_output)
+    {
       ZPC_DataSetInputPullup();
       data_is_output = 0;
     }
@@ -304,8 +380,6 @@ void ZPC_IO_Handle()
     digitalWrite(BUSREQ_, HIGH);
   }
 }
-
-
 
 // -----------------------------------------------------------------------Main code--------------------------------------------------------------------------------------
 void setup()
@@ -315,7 +389,6 @@ void setup()
 
   TQueue_init(&interrupts_q, 256);
   TQueue_init(&serial_data_q, 256);
-
 
   displayer.begin();
 
@@ -334,23 +407,25 @@ void setup()
   pinMode(USER_LED, OUTPUT);
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
-  ZPC_ClockConfig();
-  ZPC_ClockStart(); // Mode 0 by default (Arduino clock source)
+  ZPC_Clock_Config();
+  ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
 
   ZPC_ProcStart();
 
   digitalWrite(RESET_, LOW);
   delay(1);
+  // for(int i=0; i<4;i++){
+  //   ZPC_Clock_Handle();
+  // }
+  ZPC_Clock_Change(CLK_MAINLOOP);
   digitalWrite(RESET_, HIGH);
 }
 
-
 void loop()
 {
-
-  // Done: ugly, improve
+  ZPC_Clock_Handle();
   ZPC_Serial_Handle();
-  ZPC_Interrupts_HandleSend();    //Check interrupt queue and set INT to 0 or 1 if neded
+  ZPC_Interrupts_HandleSend(); //Check interrupt queue and set INT to 0 or 1 if neded
   // if (Serial.available())
   // {
   //   digitalWrite(INT_, LOW);
@@ -387,6 +462,8 @@ void loop()
     Serial.print(s);
   }
 
+  ZPC_IO_Handle();
+
   // if (IO)
   // {
   //   //sprintf(s, "Address : %04x Data: %02x \n", address, data);
@@ -413,5 +490,4 @@ void loop()
   //   digitalWrite(WAIT_RES_, HIGH);
   //   digitalWrite(BUSREQ_, HIGH);
   // }
-  ZPC_IO_Handle();
 }
