@@ -43,7 +43,7 @@ def main():
     assemblify(f"{sys.argv[1]}.asm")
     jinjify(hexify(f"{sys.argv[1]}.bin"))
     os.chdir("../")
-    os.chdir("../")
+    # os.chdir("../")
     os.system(f"{PLATFORMIO_PATH} run")
     os.system(f"{PLATFORMIO_PATH} run --target upload")
     os.system(f"{PLATFORMIO_PATH} device monitor")

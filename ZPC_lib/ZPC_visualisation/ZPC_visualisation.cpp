@@ -98,6 +98,7 @@ void ZPC_Displayer::display_ram()
   {
     print_ram_row(i);
   }
+  _next_line(0);
 }
 
 void ZPC_Displayer::display_header()

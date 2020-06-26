@@ -9,8 +9,8 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (IO)
-
+// #define DEBUG_MODE (clock_mode==CLK_MAINLOOP)
+#define DEBUG_MODE (0)
 #define IO_INT 0x04
 
 char s[30];
@@ -110,7 +110,6 @@ void ZPC_Clock_Handle()
   case CLK_MAINLOOP:
     // delay(1);
     digitalWrite(CLK, LOW);
-    delay(1);
     digitalWrite(CLK, HIGH);
     break;
   case CLK_BUTTON:
@@ -162,8 +161,8 @@ int TQueue_push(struct TQueue *q, uint8_t data)
   size_t new_tail = (q->tail + 1) % q->max_size;
   if (new_tail != q->head)
   {
-    q->tail = new_tail;
     q->_data[q->tail] = data;
+    q->tail = new_tail;
     return 0;
   }
   return -1;
@@ -179,6 +178,10 @@ uint8_t TQueue_pop(struct TQueue *q)
     q->head = new_head;
     return res;
   }
+  // Serial.print("-------------------------Empty!!!11\n"); // Due to some dark magick three exclamation points won't allow code to upload??
+  // sprintf(s, "!!!");
+  // volatile const char* s2 = "    !!!   ";
+
   return 0xff; //If empty
 }
 
@@ -303,8 +306,11 @@ void ZPC_Serial_HandleData(uint8_t serial_data)
 
 void ZPC_Serial_Handle()
 {
+  // ZPC_Clock_Change(CLK_MAINLOOP);
   if (Serial.available())
   {
+    ZPC_Clock_Change(CLK_MAINLOOP);
+    Serial.print("----Serial data incomming!--\n");
     uint8_t serial_input = Serial.read();
     if (serial_input & (1 << 7)) // Last bit set -> it is a command
     {
@@ -337,36 +343,47 @@ void ZPC_Interrupts_HandleSend()
 }
 
 uint8_t data_is_output = 0;
+uint8_t data_is_set = 0;
 uint8_t io_delay = 0;
 // uint8_t data = 0x00;
 void ZPC_IO_Handle()
 {
   if (IO)
   {
-    if (R)
+    if(!data_is_set)
     {
-      data = ZPC_IO_HandleRead(address);
-      data_is_output = 1;
-      // ZPC_DataSetOutput();
-      // ZPC_SetData(data);
-    }
-    else if (W)
-    {
-      ZPC_IO_HandleWrite(address, data);
-    }
-    else if (M1) //M1 + IO means interrupt vector request for type2 interrupt
-    {
-      data = interrupt_vector;
-      data_is_output = 1;
-      interrupt_in_progress = 0; //Interrupt will end in next cycle
-      digitalWrite(INT_, HIGH);
-    }
-    digitalWrite(BUSREQ_, LOW);
-    digitalWrite(WAIT_RES_, LOW);
-    if (data_is_output)
-    {
-      ZPC_DataSetOutput();
-      ZPC_SetData(data);
+      if (R)
+      {
+        data = ZPC_IO_HandleRead(address);
+        data_is_set = 1;
+        data_is_output = 1;
+        sprintf(s, "  Handling read: %x\n", data);
+        Serial.print(s);
+        // ZPC_DataSetOutput();
+        // ZPC_SetData(data);
+      }
+      else if (W)
+      {
+        ZPC_IO_HandleWrite(address, data);
+      }
+      else if (M1) //M1 + IO means interrupt vector request for type2 interrupt
+      {
+
+        data = interrupt_vector;
+        data_is_output = 1;
+        data_is_set = 1;
+        sprintf(s, "  Int vector: %x\n", data);
+        Serial.print(s);
+        interrupt_in_progress = 0; //Interrupt will end in next cycle
+        digitalWrite(INT_, HIGH);
+      }
+      digitalWrite(BUSREQ_, LOW);
+      digitalWrite(WAIT_RES_, LOW);
+      if (data_is_output)
+      {
+        ZPC_DataSetOutput();
+        ZPC_SetData(data);
+      }
     }
   }
   else
@@ -376,6 +393,7 @@ void ZPC_IO_Handle()
       ZPC_DataSetInputPullup();
       data_is_output = 0;
     }
+    data_is_set = 0;
     digitalWrite(WAIT_RES_, HIGH);
     digitalWrite(BUSREQ_, HIGH);
   }
@@ -407,25 +425,34 @@ void setup()
   pinMode(USER_LED, OUTPUT);
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
-  ZPC_Clock_Config();
-  ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
+
+
+  // ZPC_Clock_Config();
+  // ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
+  // ZPC_Clock_Change(CLK_MAINLOOP);
 
   ZPC_ProcStart();
 
+
   digitalWrite(RESET_, LOW);
   delay(1);
-  // for(int i=0; i<4;i++){
-  //   ZPC_Clock_Handle();
-  // }
-  ZPC_Clock_Change(CLK_MAINLOOP);
+  for(int i=0; i<10;i++){
+    ZPC_Clock_Handle();
+  }
+  // ZPC_Clock_Change(CLK_MAINLOOP);
   digitalWrite(RESET_, HIGH);
 }
 
+int clk_s = 0;
 void loop()
 {
-  ZPC_Clock_Handle();
+  // delay(100);
   ZPC_Serial_Handle();
+  ZPC_Clock_Handle();
+    ZPC_Clock_Handle();
+
   ZPC_Interrupts_HandleSend(); //Check interrupt queue and set INT to 0 or 1 if neded
+
   // if (Serial.available())
   // {
   //   digitalWrite(INT_, LOW);
@@ -443,6 +470,9 @@ void loop()
 
   address = ZPC_GetAddress();
   data = ZPC_GetData();
+
+  ZPC_IO_Handle();
+
 
   if (DEBUG_MODE)
   {
@@ -462,7 +492,6 @@ void loop()
     Serial.print(s);
   }
 
-  ZPC_IO_Handle();
 
   // if (IO)
   // {
