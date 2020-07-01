@@ -1,7 +1,7 @@
 #ifndef ZPC_IO_FUNCS_PROTO1
 #define ZPC_IO_FUNCS_PROTO1
 #include "Arduino.h"
-#include "EEPROM.h"
+// #include "EEPROM.h"
 
 #include "ZPC_pinout.h"
 #include "ZPC_funcs.h"

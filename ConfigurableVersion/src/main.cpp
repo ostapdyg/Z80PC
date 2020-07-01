@@ -10,7 +10,7 @@
 #define program program_CUSTOM
 
 // #define DEBUG_MODE (clock_mode==CLK_MAINLOOP)
-#define DEBUG_MODE (0)
+#define DEBUG_MODE (1)
 #define IO_INT 0x04
 
 char s[30];
@@ -58,48 +58,60 @@ enum clock_mode_en
 };
 enum clock_mode_en clock_mode;
 
+uint8_t wait_continue = 0;
 void _waitSignal(uint8_t pin, int state)
 {
-  for (;;)
-  {
-    while (digitalRead(pin) != state)
+    // Serial.print(".\n");
+    // while(!Serial.available()){}
+    // Serial.read();
+    // return;
+
+    for (;;)
     {
+        // sprintf(s, "EXT_CLK: %d", digitalRead(pin));
+        // Serial.print(s);
+        // Serial.print()
+        while (digitalRead(pin) != state)
+        {
+          if(Serial.available()){
+            Serial.read();
+            return;
+          }
+        }
+        delay(10);
+        if (digitalRead(pin) == state)
+        {
+            return;
+        }
     }
-    delay(10);
-    if (digitalRead(pin) == state)
-    {
-      return;
-    }
-  }
 }
 
 void ZPC_Clock_Config()
 {
-  pinMode(CLK, OUTPUT);
+    pinMode(CLK, OUTPUT);
 
-  TCCR1A = (1 << COM1A0);
+    TCCR1B = (1 << WGM12); //Set timer mode to CTC but do not start the timer.
+    TCCR1A = 0;
 
-  TCCR1B = (1 << WGM12); //Set timer mode to CTC but do not start the timer.
+    TIMSK1 = 0;
 
-  TIMSK1 = 0;
+    OCR1A = 399;          //Set Compare registre to 399
 
-  OCR1A = 399;
-
-  clock_mode = CLK_TIMER;
-  // clock_mode = CLK_MAINLOOP;
+    // clock_mode = CLK_MAINLOOP;
 }
-
 inline void ZPC_Clock_Stop()
 {
-  TCCR1B &= ~(1 << CS10); // CS = 000, stop
+    TCCR1A &= ~(1 << COM1A0);   //Set CLK pin to free
+    TCCR1B &= ~(1 << CS10); // CS = 000, stop
 }
 
 inline void ZPC_Clock_Start()
 {
-  TCNT1 = 0;
-
-  TCCR1B |= (1 << CS10); // CS = 001, start without a prescaler
+    TCNT1 = 0;                  //Set timer counter to zero
+    TCCR1A |= (1 << COM1A0); //Set CLK pin to toggle on Compare Capture
+    TCCR1B |= (1 << CS10); // CS = 001, start without a prescaler
 }
+
 
 void ZPC_Clock_Handle()
 {
@@ -113,9 +125,13 @@ void ZPC_Clock_Handle()
     digitalWrite(CLK, HIGH);
     break;
   case CLK_BUTTON:
+    // Serial.print("\nWait for EXT_CLK LOW...\n");
     _waitSignal(EXT_CLOCK, LOW);
+    Serial.print(".\n");
     digitalWrite(CLK, LOW);
+    // Serial.print("Wait for EXT_CLK HIGH...\n");
     _waitSignal(EXT_CLOCK, HIGH);
+    Serial.print("|\n");
     digitalWrite(CLK, HIGH);
     break;
   case CLK_NONE:
@@ -288,18 +304,30 @@ uint8_t ZPC_IO_HandleRead(uint16_t address)
 
 void ZPC_Serial_HandleCommand(uint8_t command)
 {
-  command &= ~(1 << 7);
+  sprintf(s, "----Command from Serial: %02X\n", command);
+  command |= (1 << 7);
   switch (command)
   {
   case 0x00:
     break; //DOTO
+  case 0xB9:
+    ZPC_Clock_Change(CLK_MAINLOOP);
+    break;
+  case 0x86:
+    ZPC_Clock_Change(CLK_TIMER);
+    break;
+  case 0x83:
+    ZPC_Clock_Change(CLK_BUTTON);
+    break;
   default:
     break;
   }
+  // ZPC_Clock_Change(CLK_MAINLOOP);
 }
 
 void ZPC_Serial_HandleData(uint8_t serial_data)
 {
+  sprintf(s, "----Data from Serial: %02X\n", serial_data);
   TQueue_push(&serial_data_q, serial_data);
   TQueue_push(&interrupts_q, IO_INT);
 }
@@ -309,8 +337,6 @@ void ZPC_Serial_Handle()
   // ZPC_Clock_Change(CLK_MAINLOOP);
   if (Serial.available())
   {
-    ZPC_Clock_Change(CLK_MAINLOOP);
-    Serial.print("----Serial data incomming!--\n");
     uint8_t serial_input = Serial.read();
     if (serial_input & (1 << 7)) // Last bit set -> it is a command
     {
@@ -426,13 +452,13 @@ void setup()
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
 
-
-  // ZPC_Clock_Config();
-  // ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
-  // ZPC_Clock_Change(CLK_MAINLOOP);
+  clock_mode = CLK_TIMER;
+  pinMode(EXT_CLOCK, INPUT_PULLUP);
+  ZPC_Clock_Config();
+  ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
+  ZPC_Clock_Change(CLK_MAINLOOP);
 
   ZPC_ProcStart();
-
 
   digitalWrite(RESET_, LOW);
   delay(1);
@@ -446,22 +472,12 @@ void setup()
 int clk_s = 0;
 void loop()
 {
-  // delay(100);
+  delay(100);
   ZPC_Serial_Handle();
   ZPC_Clock_Handle();
-    ZPC_Clock_Handle();
 
   ZPC_Interrupts_HandleSend(); //Check interrupt queue and set INT to 0 or 1 if neded
 
-  // if (Serial.available())
-  // {
-  //   digitalWrite(INT_, LOW);
-  //   int_vector = IO_INT;
-  // }
-  // else
-  // {
-  //   digitalWrite(INT_, HIGH);
-  // }
 
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
@@ -492,31 +508,4 @@ void loop()
     Serial.print(s);
   }
 
-
-  // if (IO)
-  // {
-  //   //sprintf(s, "Address : %04x Data: %02x \n", address, data);
-  //   if (R)
-  //   {
-  //     ZPC_IO_HandleRead(address);
-  //   }
-  //   else if (W)
-  //   {
-  //     ZPC_IO_HandleWrite(address, data);
-  //   }
-  //   else if (M1)
-  //   { //Type 2 interrupt
-  //     ZPC_DataSetOutput();
-  //     ZPC_SetData(int_vector);
-  //   }
-  //   digitalWrite(BUSREQ_, LOW);
-  //   digitalWrite(WAIT_RES_, LOW);
-  //   delayMicroseconds(100);
-  //   if (R | M1)
-  //   {
-  //     ZPC_DataSetInputPullup();
-  //   }
-  //   digitalWrite(WAIT_RES_, HIGH);
-  //   digitalWrite(BUSREQ_, HIGH);
-  // }
 }

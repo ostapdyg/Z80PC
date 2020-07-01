@@ -58,7 +58,7 @@
 
 
 
-#define EXT_CLOCK 5
+#define EXT_CLOCK A5
 
 #endif
 

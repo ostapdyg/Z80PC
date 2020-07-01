@@ -60,11 +60,12 @@ uint8_t ZPC_IO_Serial_WriteByte(uint8_t data)
 
 uint8_t ZPC_IO_ArduinoROM_ReadByte(uint16_t address)
 {
-    return EEPROM.read(address);
+    // return EEPROM.read(address);
+    return 0;
 }
 
 uint8_t ZPC_IO_ArduinoROM_WriteByte(uint16_t address, uint8_t data)
 {
-    EEPROM.write(address, data);
+    // EEPROM.write(address, data);
     return 0;
 }
