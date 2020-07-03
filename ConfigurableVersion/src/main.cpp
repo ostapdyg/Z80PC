@@ -126,11 +126,11 @@ void ZPC_Clock_Handle()
     break;
   case CLK_BUTTON:
     // Serial.print("\nWait for EXT_CLK LOW...\n");
-    _waitSignal(EXT_CLOCK, LOW);
+    _waitSignal(EXT_CLOCK_, LOW);
     Serial.print(".\n");
     digitalWrite(CLK, LOW);
     // Serial.print("Wait for EXT_CLK HIGH...\n");
-    _waitSignal(EXT_CLOCK, HIGH);
+    _waitSignal(EXT_CLOCK_, HIGH);
     Serial.print("|\n");
     digitalWrite(CLK, HIGH);
     break;
@@ -138,6 +138,9 @@ void ZPC_Clock_Handle()
     break;
   }
 }
+
+// ------------------------------------------------------------------Clock change------------------------------------------------------------------------------------
+
 
 void ZPC_Clock_Change(enum clock_mode_en new_mode)
 {
@@ -426,6 +429,8 @@ void ZPC_IO_Handle()
 }
 
 // -----------------------------------------------------------------------Main code--------------------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------Setup--------------------------------------------------------------------------------------
 void setup()
 {
   Serial.begin(9600);
@@ -452,8 +457,13 @@ void setup()
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
 
+  pinMode(timingPin, INPUT_PULLUP);
+  pinMode(STATE_PIN0, INPUT_PULLUP);
+  pinMode(STATE_PIN1, INPUT_PULLUP);
+  pinMode(CNG_MODE_, INPUT_PULLUP);    
+
   clock_mode = CLK_TIMER;
-  pinMode(EXT_CLOCK, INPUT_PULLUP);
+  pinMode(EXT_CLOCK_, INPUT_PULLUP);
   ZPC_Clock_Config();
   ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
   ZPC_Clock_Change(CLK_MAINLOOP);
@@ -470,9 +480,23 @@ void setup()
 }
 
 int clk_s = 0;
+
+// -----------------------------------------------------------------------Main loop--------------------------------------------------------------------------------------
+
 void loop()
 {
   delay(100);
+
+  if !digital_read(CNG_MODE_) 
+  {
+    delay(50);
+    int new_tick_mode = digitalRead(STATE_PIN0) | (digitalRead(STATE_PIN1)<<1);
+    if (clock_mode != new_tick_mode) 
+    {
+      ZPC_Clock_Change(new_tick_mode);
+    }
+  }
+
   ZPC_Serial_Handle();
   ZPC_Clock_Handle();
 
@@ -507,5 +531,7 @@ void loop()
     sprintf(s, "Address : %04x Data: %02x \n", address, data);
     Serial.print(s);
   }
+
+  
 
 }

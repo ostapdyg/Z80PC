@@ -1,4 +1,4 @@
-#DEFINE interruptPin 19
+#DEFINE changeTickModePin 19
 #DEFINE timingPin 5
 #DEFINE statePin0 6
 #DEFINE statePin1 7
@@ -13,8 +13,8 @@ void pre () {
     pinMode(timingPin, INPUT_PULLUP);
     pinMode(statePin0, INPUT_PULLUP);
     pinMode(statePin1, INPUT_PULLUP);
-    pinMode(interruptPin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(interruptPin), blink, CHANGE);
+    pinMode(changeTickModePin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(changeTickModePin), blink, CHANGE);
 }
 
 void change_timing () {

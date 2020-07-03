@@ -57,8 +57,10 @@
 #define M1_ 15
 
 
-
-#define EXT_CLOCK A5
+#define CNG_MODE_ 19
+#define EXT_CLOCK_ A5
+#define STATE_PIN0 A6
+#define STATE_PIN1 A7
 
 #endif
 
