@@ -9,8 +9,8 @@
 
 #define program program_CUSTOM
 
-// #define DEBUG_MODE (clock_mode==CLK_MAINLOOP)
-#define DEBUG_MODE (1)
+#define DEBUG_MODE (clock_mode==CLK_MAINLOOP)
+// #define DEBUG_MODE (0)
 #define IO_INT 0x04
 
 char s[30];
@@ -223,7 +223,7 @@ inline void ZPC_DisplayRAM(ZPC_Displayer *displayer)
 // ------------------------------------------------------------------Event Handlers--------------------------------------------------------------------------------------
 // uint8_t serial_input_buf = 0x00;
 // uint8_t buf_has_data = 0;
-
+  //--------------------------------------------------------------------------IO Write/Read------------------------------------------------------------------------------
 void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
 {
   uint8_t port = address & 0xff;
@@ -301,23 +301,61 @@ uint8_t ZPC_IO_HandleRead(uint16_t address)
   }
   return data_in;
 }
+//
+
+
+
+  // ------------------------------------------------------------------Serial---------------------------------------------------------------------------------
+void ZPC_Serial_HandleUpload(){
+  // Read Starting address
+  uint16_t address_to_write = 0x0000;
+  // Hight byte
+  while(!Serial.available()){}
+  address_to_write |= Serial.read()<<8;
+  // Low byte
+  while(!Serial.available()){}
+  address_to_write |= Serial.read();
+  // Read block size
+  uint16_t size_to_write = 0x0000;
+  while(!Serial.available()){}
+  size_to_write |= Serial.read()<<8;
+  // Low byte
+  while(!Serial.available()){}
+  size_to_write |= Serial.read();
+  // Read bytes from serial and write them to RAM
+  if(0xffff - address_to_write < size_to_write){
+    // Not Enough space in memory
+    return;
+  }
+  for(uint16_t p = address_to_write; p < address_to_write+size_to_write; p++){
+    while(!Serial.available()){}
+    ZPC_MemWrite(p, Serial.read());
+  }
+  return;
+}
+
 
 void ZPC_Serial_HandleCommand(uint8_t command)
 {
   sprintf(s, "----Command from Serial: %02X\n", command);
+  Serial.print(s);
   command |= (1 << 7);
   switch (command)
   {
   case 0x00:
     break; //DOTO
-  case 0xB9:
+  case 0xB9: // ц
     ZPC_Clock_Change(CLK_MAINLOOP);
     break;
-  case 0x86:
+  case 0x86: // й
     ZPC_Clock_Change(CLK_TIMER);
     break;
-  case 0x83:
+  case 0x83: // у
     ZPC_Clock_Change(CLK_BUTTON);
+    break;
+  case 0xBA: // к
+    ZPC_Serial_HandleUpload();
+    ZPC_DisplayRAM(&displayer);
     break;
   default:
     break;
@@ -431,8 +469,8 @@ void setup()
   Serial.begin(9600);
   Serial.print("init\n");
 
-  TQueue_init(&interrupts_q, 256);
-  TQueue_init(&serial_data_q, 256);
+  TQueue_init(&interrupts_q, 4);
+  TQueue_init(&serial_data_q, 4);
 
   displayer.begin();
 
@@ -456,7 +494,7 @@ void setup()
   pinMode(EXT_CLOCK, INPUT_PULLUP);
   ZPC_Clock_Config();
   ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
-  ZPC_Clock_Change(CLK_MAINLOOP);
+  // ZPC_Clock_Change(CLK_MAINLOOP);
 
   ZPC_ProcStart();
 
