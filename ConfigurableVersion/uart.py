@@ -54,6 +54,26 @@ class Z80PCSerial():
 
         self.__serial_handle.baudrate = baud
 
+    def handle_write(self, fname, start_address):
+
+        f = open(fname, 'rb', encoding='ascii')
+        f.seek(0,2)
+        fsize = f.tell()
+        f.seek(0,0)
+        fcontent = f.read()
+        self.__serial_handle.write(bytes([Commands.WRITE, start_address, fsize]) + fcontent)
+
+    def handle_send(self, data):
+
+        self.__serial_handle.write(data) #TODO: check whether len == 1
+
+    def handle_continue(self):
+
+        self.__serial_handle.write(bytes([Commands.CONTINUE]))
+
+    def handle_mode_change(self, mode):
+
+        self.__serial_handle.write(bytes([Commands.MODE_0 + mode])) #MODE_1 and MODE_2 are just offsets from MODE_0
 
     def run(self):
 
@@ -72,28 +92,23 @@ class Z80PCSerial():
                     
                     elif cmd_name in ["dump", "write", "w", "program"]:
 
-                        f = open(cmd[1], 'rb', encoding='ascii')
-                        f.seek(0,2)
-                        fsize = f.tell()
-                        f.seek(0,0)
-                        fcontent = f.read()
-                        self.__serial_handle.write(bytes([Commands.WRITE, cmd[2], fsize]) + fcontent)
+                        self.handle_write(cmd[1], cmd[2])
 
                     elif cmd_name in ["send", "s", "transmit", "tx", "enter"]:
 
-                        self.__serial_handle.write(cmd[1]) #TODO: check whether len == 1
+                        self.handle_send(cmd[1])
 
                     elif cmd_name in ["continue", "c", "next"]:
 
-                        self.__serial_handle.write(bytes([Commands.CONTINUE]))
+                        self.handle_continue()
                     
                     elif cmd_name in ["mode", "m", "change", "clockmode"]:
 
-                        self.__serial_handle.write(bytes([Commands.MODE_0 + cmd[1]])) #MODE_1 and MODE_2 are just offsets from MODE_0
+                        self.handle_mode_change(cmd[1])
 
-                    elif cmd_name in ["interact", "i", "keyboard"]:
+                    elif cmd_name in ["interact", "i", "keyboard"]: #Warning: experimental
                         
-                        
+                        #TODO: rewrite this
                         with keyboard.Listener(on_press=lambda key: False if key == Key.esc else self.__serial_handle.write(key), 
                                                suppress=True) as listener:
 
