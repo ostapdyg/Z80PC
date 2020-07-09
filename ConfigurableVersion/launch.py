@@ -30,7 +30,7 @@ if __name__ == "__main__":
         s = None #declare the handle
         if arguments.serial == "auto":
             s = SerialFactory().default()
-        elif (platform.system() == "Linux" and re.match("(?i)\s*/?dev/\w+", arguments.serial)) or (platform.system() == "Windows" and re.match("(?i)COM\d", arguments.serial)):
+        elif (platform.system() == "Linux" and re.match(r"(?i)\s*/?dev/\w+", arguments.serial)) or (platform.system() == "Windows" and re.match(r"(?i)COM\d", arguments.serial)):
             s = SerialFactory().from_port(arguments.serial)
         else:
             s = SerialFactory().from_device_desc(arguments.serial)
@@ -44,14 +44,18 @@ if __name__ == "__main__":
             print(arguments.serialwrite)
             if len(arguments.serialwrite) == 1:
 
+                s.open()
                 s.handle_write(arguments.serialwrite, 0)
+                s.close()
 
             else:
 
                 if len(arguments.serialwrite) % 2 != 0:
 
                     parser.error("Invalid input format: not enough addresses")
-
+                
+                s.open()
                 for i in range(len(arguments.serialwrite), -1, 2):
 
                     s.handle_write(arguments.serialwrite[i], int(arguments.serialwrite[i+1], base=(16 if arguments.serialwrite[i+1].startswith("0x") else 10)))
+                s.close()

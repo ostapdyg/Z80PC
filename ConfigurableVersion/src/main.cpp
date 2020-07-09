@@ -9,7 +9,7 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (clock_mode==CLK_MAINLOOP)
+#define DEBUG_MODE (clock_mode == CLK_MAINLOOP)
 // #define DEBUG_MODE (0)
 #define IO_INT 0x04
 
@@ -61,57 +61,57 @@ enum clock_mode_en clock_mode;
 uint8_t wait_continue = 0;
 void _waitSignal(uint8_t pin, int state)
 {
-    // Serial.print(".\n");
-    // while(!Serial.available()){}
-    // Serial.read();
-    // return;
+  // Serial.print(".\n");
+  // while(!Serial.available()){}
+  // Serial.read();
+  // return;
 
-    for (;;)
+  for (;;)
+  {
+    // sprintf(s, "EXT_CLK: %d", digitalRead(pin));
+    // Serial.print(s);
+    // Serial.print()
+    while (digitalRead(pin) != state)
     {
-        // sprintf(s, "EXT_CLK: %d", digitalRead(pin));
-        // Serial.print(s);
-        // Serial.print()
-        while (digitalRead(pin) != state)
-        {
-          if(Serial.available()){
-            Serial.read();
-            return;
-          }
-        }
-        delay(10);
-        if (digitalRead(pin) == state)
-        {
-            return;
-        }
+      if (Serial.available())
+      {
+        Serial.read();
+        return;
+      }
     }
+    delay(10);
+    if (digitalRead(pin) == state)
+    {
+      return;
+    }
+  }
 }
 
 void ZPC_Clock_Config()
 {
-    pinMode(CLK, OUTPUT);
+  pinMode(CLK, OUTPUT);
 
-    TCCR1B = (1 << WGM12); //Set timer mode to CTC but do not start the timer.
-    TCCR1A = 0;
+  TCCR1B = (1 << WGM12); //Set timer mode to CTC but do not start the timer.
+  TCCR1A = 0;
 
-    TIMSK1 = 0;
+  TIMSK1 = 0;
 
-    OCR1A = 399;          //Set Compare registre to 399
+  OCR1A = 399; //Set Compare registre to 399
 
-    // clock_mode = CLK_MAINLOOP;
+  // clock_mode = CLK_MAINLOOP;
 }
 inline void ZPC_Clock_Stop()
 {
-    TCCR1A &= ~(1 << COM1A0);   //Set CLK pin to free
-    TCCR1B &= ~(1 << CS10); // CS = 000, stop
+  TCCR1A &= ~(1 << COM1A0); //Set CLK pin to free
+  TCCR1B &= ~(1 << CS10);   // CS = 000, stop
 }
 
 inline void ZPC_Clock_Start()
 {
-    TCNT1 = 0;                  //Set timer counter to zero
-    TCCR1A |= (1 << COM1A0); //Set CLK pin to toggle on Compare Capture
-    TCCR1B |= (1 << CS10); // CS = 001, start without a prescaler
+  TCNT1 = 0;               //Set timer counter to zero
+  TCCR1A |= (1 << COM1A0); //Set CLK pin to toggle on Compare Capture
+  TCCR1B |= (1 << CS10);   // CS = 001, start without a prescaler
 }
-
 
 void ZPC_Clock_Handle()
 {
@@ -223,7 +223,7 @@ inline void ZPC_DisplayRAM(ZPC_Displayer *displayer)
 // ------------------------------------------------------------------Event Handlers--------------------------------------------------------------------------------------
 // uint8_t serial_input_buf = 0x00;
 // uint8_t buf_has_data = 0;
-  //--------------------------------------------------------------------------IO Write/Read------------------------------------------------------------------------------
+//--------------------------------------------------------------------------IO Write/Read------------------------------------------------------------------------------
 void ZPC_IO_HandleWrite(uint16_t address, uint8_t data)
 {
   uint8_t port = address & 0xff;
@@ -303,37 +303,62 @@ uint8_t ZPC_IO_HandleRead(uint16_t address)
 }
 //
 
-
-
-  // ------------------------------------------------------------------Serial---------------------------------------------------------------------------------
-void ZPC_Serial_HandleUpload(){
+// ------------------------------------------------------------------Serial---------------------------------------------------------------------------------
+void ZPC_Serial_HandleUpload()
+{
   // Read Starting address
   uint16_t address_to_write = 0x0000;
   // Hight byte
-  while(!Serial.available()){}
-  address_to_write |= Serial.read()<<8;
+  while (!Serial.available())
+  {
+  }
+  address_to_write |= Serial.read() << 8;
   // Low byte
-  while(!Serial.available()){}
+  while (!Serial.available())
+  {
+  }
   address_to_write |= Serial.read();
   // Read block size
   uint16_t size_to_write = 0x0000;
-  while(!Serial.available()){}
-  size_to_write |= Serial.read()<<8;
+  while (!Serial.available())
+  {
+  }
+
   // Low byte
-  while(!Serial.available()){}
+  while (!Serial.available())
+  {
+  }
+  size_to_write |= Serial.read() << 8;
   size_to_write |= Serial.read();
+
+  sprintf(s, "A:%04xS:%04x\n", address_to_write, size_to_write);
+
+  displayer._next_line(1);
+  displayer._print(s);
+  // delay(5000);
   // Read bytes from serial and write them to RAM
-  if(0xffff - address_to_write < size_to_write){
+  if (0xffff - address_to_write < size_to_write)
+  {
     // Not Enough space in memory
     return;
   }
-  for(uint16_t p = address_to_write; p < address_to_write+size_to_write; p++){
-    while(!Serial.available()){}
-    ZPC_MemWrite(p, Serial.read());
+
+  ZPC_TakeBus();
+  for (uint16_t p = address_to_write; p < address_to_write + size_to_write; p++)
+  {
+
+    while (!Serial.available())
+    {
+    }
+    uint8_t prog_byte = Serial.read();
+    ZPC_MemWrite(p, prog_byte);
+
+    // sprintf(s, "%02x ", prog_byte);
+    // Serial.print(s);
   }
+  ZPC_FreeBus();
   return;
 }
-
 
 void ZPC_Serial_HandleCommand(uint8_t command)
 {
@@ -343,7 +368,7 @@ void ZPC_Serial_HandleCommand(uint8_t command)
   switch (command)
   {
   case 0x00:
-    break; //DOTO
+    break;   //DOTO
   case 0xB9: // ц
     ZPC_Clock_Change(CLK_MAINLOOP);
     break;
@@ -414,7 +439,7 @@ void ZPC_IO_Handle()
 {
   if (IO)
   {
-    if(!data_is_set)
+    if (!data_is_set)
     {
       if (R)
       {
@@ -432,7 +457,6 @@ void ZPC_IO_Handle()
       }
       else if (M1) //M1 + IO means interrupt vector request for type2 interrupt
       {
-
         data = interrupt_vector;
         data_is_output = 1;
         data_is_set = 1;
@@ -500,7 +524,8 @@ void setup()
 
   digitalWrite(RESET_, LOW);
   delay(1);
-  for(int i=0; i<10;i++){
+  for (int i = 0; i < 10; i++)
+  {
     ZPC_Clock_Handle();
   }
   // ZPC_Clock_Change(CLK_MAINLOOP);
@@ -516,7 +541,6 @@ void loop()
 
   ZPC_Interrupts_HandleSend(); //Check interrupt queue and set INT to 0 or 1 if neded
 
-
   IO = !digitalRead(WAIT_);
   W = !digitalRead(WR_);
   R = !digitalRead(RD_);
@@ -526,7 +550,6 @@ void loop()
   data = ZPC_GetData();
 
   ZPC_IO_Handle();
-
 
   if (DEBUG_MODE)
   {
@@ -545,5 +568,4 @@ void loop()
     sprintf(s, "Address : %04x Data: %02x \n", address, data);
     Serial.print(s);
   }
-
 }

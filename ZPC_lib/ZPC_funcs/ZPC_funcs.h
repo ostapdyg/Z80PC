@@ -25,6 +25,9 @@ void ZPC_DataSetOutput(void);
 //Set Arduino data pins to input with pullup
 void ZPC_DataSetInputPullup(void);
 
+void ZPC_TakeBus(void);
+void ZPC_FreeBus(void);
+
 //Write a byte to Arduino data pins
 void ZPC_SetData(uint8_t data);
 
