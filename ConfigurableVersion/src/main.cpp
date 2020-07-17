@@ -13,6 +13,11 @@
 // #define DEBUG_MODE (0)
 #define IO_INT 0x04
 
+#define CLOCK_TYPE_PIN_1_ 6
+#define CLOCK_TYPE_PIN_2_ 7
+
+#define CLOCK_CHNG_ 8 //19
+
 char s[30];
 
 uint8_t W = 0;
@@ -57,6 +62,9 @@ enum clock_mode_en
   CLK_NONE = 3
 };
 enum clock_mode_en clock_mode;
+int tacts_per_button = 1;
+int current_tacts = 0;
+
 
 uint8_t wait_continue = 0;
 void _waitSignal(uint8_t pin, int state)
@@ -65,7 +73,7 @@ void _waitSignal(uint8_t pin, int state)
   // while(!Serial.available()){}
   // Serial.read();
   // return;
-
+  pinMode(pin, INPUT_PULLUP);
   for (;;)
   {
     // sprintf(s, "EXT_CLK: %d", digitalRead(pin));
@@ -115,6 +123,10 @@ inline void ZPC_Clock_Start()
 
 void ZPC_Clock_Handle()
 {
+  if(digitalRead(CLOCK_CHNG_)==LOW){
+    ZPC_Clock_Change((clock_mode_en)((!digitalRead(CLOCK_TYPE_PIN_1_))|(digitalRead(CLOCK_TYPE_PIN_2_)<<1)));
+  }
+
   switch (clock_mode)
   {
   case CLK_TIMER:
@@ -126,13 +138,17 @@ void ZPC_Clock_Handle()
     break;
   case CLK_BUTTON:
     // Serial.print("\nWait for EXT_CLK LOW...\n");
-    _waitSignal(EXT_CLOCK, LOW);
-    Serial.print(".\n");
-    digitalWrite(CLK, LOW);
-    // Serial.print("Wait for EXT_CLK HIGH...\n");
-    _waitSignal(EXT_CLOCK, HIGH);
-    Serial.print("|\n");
-    digitalWrite(CLK, HIGH);
+    current_tacts = (current_tacts + 1) % tacts_per_button;
+    Serial.print(" ");
+    if(!current_tacts){
+      _waitSignal(EXT_CLOCK, LOW);
+      Serial.print(".\n");
+      digitalWrite(CLK, LOW);
+      // Serial.print("Wait for EXT_CLK HIGH...\n");
+      _waitSignal(EXT_CLOCK, HIGH);
+      Serial.print("|\n");
+      digitalWrite(CLK, HIGH);
+    }
     break;
   case CLK_NONE:
     break;
@@ -369,6 +385,11 @@ void ZPC_Serial_HandleCommand(uint8_t command)
   {
   case 0x00:
     break;   //DOTO
+  case 0x82:  // Change tacts per button click
+    while(!Serial.available()){};
+    tacts_per_button = Serial.read();
+    Serial.print(tacts_per_button);
+    break;
   case 0xB9: // ц
     ZPC_Clock_Change(CLK_MAINLOOP);
     break;
@@ -513,6 +534,10 @@ void setup()
   pinMode(USER_LED, OUTPUT);
   // pinMode(INT_, OUTPUT);    //!!
   // digitalWrite(INT_, HIGH); //!!
+  pinMode(CLOCK_TYPE_PIN_1_, INPUT_PULLUP);
+  pinMode(CLOCK_TYPE_PIN_2_, INPUT_PULLUP);
+  pinMode(CLOCK_CHNG_, INPUT_PULLUP);
+
 
   clock_mode = CLK_TIMER;
   pinMode(EXT_CLOCK, INPUT_PULLUP);
