@@ -1,11 +1,11 @@
 import serial
 from serial.tools import list_ports
 import re
-from enum import Enum
+from enum import IntEnum
 # from pynput import keyboard
 # from pynput.keyboard import Key, Controller
 
-class Commands(Enum):
+class Commands(IntEnum):
 
     WRITE = 0xba
     CONTINUE = 0x81
@@ -77,12 +77,18 @@ class Z80PCSerial():
 
     def handle_write(self, fname, start_address):
 
-        f = open(fname, 'rb', encoding='ascii')
+        f = open(fname, 'rb')
         f.seek(0,2)
         fsize = f.tell()
         f.seek(0,0)
         fcontent = f.read()
-        self.__serial_handle.write(bytes([Commands.WRITE, start_address, fsize]) + fcontent)
+        print(f"file size: {fsize}, \nfile content{fcontent}")
+        UPPER_BYTE_MASK = 0xff00
+        LOWER_BYTE_MASK = 0x00ff
+        self.__serial_handle.write(bytes([Commands.WRITE, 
+                                          (start_address & UPPER_BYTE_MASK) >> 8, start_address & LOWER_BYTE_MASK, 
+                                          (fsize & UPPER_BYTE_MASK) >> 8, fsize & LOWER_BYTE_MASK])
+                                          + fcontent)
 
     def handle_send(self, data):
         

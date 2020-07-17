@@ -335,7 +335,7 @@ void ZPC_Serial_HandleUpload()
 
   displayer._next_line(1);
   displayer._print(s);
-  // delay(5000);
+  delay(5000);
   // Read bytes from serial and write them to RAM
   if (0xffff - address_to_write < size_to_write)
   {

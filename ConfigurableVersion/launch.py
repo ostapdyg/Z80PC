@@ -45,7 +45,7 @@ if __name__ == "__main__":
             if len(arguments.serialwrite) == 1:
 
                 s.open()
-                s.handle_write(arguments.serialwrite, 0)
+                s.handle_write(arguments.serialwrite[0], 0)
                 s.close()
 
             else:
