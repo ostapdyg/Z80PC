@@ -30,6 +30,9 @@ module Z80_MMU  #(parameter FLAGS = 4,
 
 	// if virtual_addr is x00XX => set Flags and 4 elder addr
 	// if virtual_addr is x01XX => set XX'th page_table entry to data
+
+	// physical_address[0] == 0 -> low PA
+	// physical_address[0] == 1 -> high PA
 	assign page_name = virtual_addr[15:8];
 	assign offset = virtual_addr[7:0];
 	 
@@ -37,18 +40,19 @@ module Z80_MMU  #(parameter FLAGS = 4,
     assign ram_data = (~nWR & (page_name != 8'hff)) ? cpu_data : 8'bz; //if the CPU is writing and it's not changing the page table, forward the data from it's inner bus to the outer bus. Otherwise, let go of the CPU data bus.
 
 	always @(nMREQ or nWR or nRD)
-	begin
+		begin
 		if(~nMREQ)
 		begin
-			// $strobe("nMREQ is active, nWR: %H", nWR);
-        	if ((page_name == 8'hff) && ~nWR)
+        	if (page_name ^ 8'hfe < 2 && ~nWR)
 				begin
-					// $strobe("offset: %H, data: %H\n",offset[7:0], cpu_data[7:0]);
-					page_table[offset][7:0] = cpu_data[7:0]; //Change the page table entry
-				end
-			else if ((page_name == 8'hfe) && ~nWR)
-				begin
-					page_table[offset][FLAGS+PA-1:8] = cpu_data[7:0];
+					if(virtual_addr[0] == 0)
+						begin
+						page_table[virtual_addr[8:1]][7:0] = cpu_data[7:0]; //Change the page table entry
+						end
+					else
+						begin
+						page_table[virtual_addr[8:1]][FLAGS+PA-1:8] = cpu_data[7:0]; //Change the page table entry
+						end	
 				end
 			else
 				begin
@@ -57,7 +61,7 @@ module Z80_MMU  #(parameter FLAGS = 4,
 		end
 		else
 			physical_addr[PA+8-1:0] = 20'hz; // $strobe("nMREQ is inactive");
-	end
+		end
 	
 endmodule
 
