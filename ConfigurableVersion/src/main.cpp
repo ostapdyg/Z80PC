@@ -9,7 +9,7 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (clock_mode == CLK_MAINLOOP)
+#define DEBUG_MODE (0)
 // #define DEBUG_MODE (0)
 #define IO_INT 0x04
 
@@ -121,6 +121,20 @@ inline void ZPC_Clock_Start()
   TCCR1B |= (1 << CS10);   // CS = 001, start without a prescaler
 }
 
+void ZPC_Clock_Change(enum clock_mode_en new_mode)
+{
+  if (clock_mode == CLK_TIMER)
+  {
+    ZPC_Clock_Stop();
+  }
+  if (new_mode == CLK_TIMER)
+  {
+    ZPC_Clock_Start();
+  }
+  clock_mode = new_mode;
+  return;
+}
+
 void ZPC_Clock_Handle()
 {
   if(digitalRead(CLOCK_CHNG_)==LOW){
@@ -155,19 +169,7 @@ void ZPC_Clock_Handle()
   }
 }
 
-void ZPC_Clock_Change(enum clock_mode_en new_mode)
-{
-  if (clock_mode == CLK_TIMER)
-  {
-    ZPC_Clock_Stop();
-  }
-  if (new_mode == CLK_TIMER)
-  {
-    ZPC_Clock_Start();
-  }
-  clock_mode = new_mode;
-  return;
-}
+
 
 // ------------------------------------------------------------------Interrupt Queue------------------------------------------------------------------------------------
 struct TQueue
@@ -527,6 +529,7 @@ void setup()
   // displayer.refresh();
 
   // displayer.set_register(rA, 0xa);
+  // delay(100);
   ZPC_DisplayRAM(&displayer);
 
   Serial.print("Start\n");

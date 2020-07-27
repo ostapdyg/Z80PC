@@ -98,7 +98,7 @@ void ZPC_MemWrite(uint16_t address, uint8_t data)
 
     digitalWrite(MREQ_, LOW); // Enable external RAM /CE1 pin
     digitalWrite(WR_, LOW);   // Write data into current address of the external RAM (10us 1-0-1 pulse)
-    delayMicroseconds(1000);
+    delayMicroseconds(100);
     digitalWrite(WR_, HIGH);
     digitalWrite(MREQ_, HIGH);
 
@@ -112,7 +112,7 @@ uint8_t ZPC_MemRead(uint16_t address)
 
     digitalWrite(MREQ_, LOW);
     digitalWrite(RD_, LOW);
-    delayMicroseconds(1000);
+    delayMicroseconds(100);
 
     uint8_t read_data = ZPC_GetData();
 
@@ -126,11 +126,11 @@ void ZPC_TakeBus()
 {
     digitalWrite(BUSREQ_, LOW);
     delay(1);
-    if (digitalRead(BUSACK_) == HIGH)
-    {
-        Serial.print("Bus request not acknowledged!");
-        // return;
-    }
+    // if (digitalRead(BUSACK_) == HIGH)
+    // {
+    //     // Serial.print("Bus request not acknowledged!");
+    //     // return;
+    // }
     pinMode(MREQ_, OUTPUT);
     digitalWrite(MREQ_, HIGH);
 
@@ -150,11 +150,11 @@ void ZPC_FreeBus()
     pinMode(MREQ_, INPUT_PULLUP);
     digitalWrite(BUSREQ_, HIGH);
     delay(1);
-    if (digitalRead(BUSACK_) == LOW)
-    {
-        Serial.print("Bus free not acknowledged!");
-        // return;
-    }
+    // if (digitalRead(BUSACK_) == LOW)
+    // {
+    //     Serial.print("Bus free not acknowledged!");
+    //     // return;
+    // }
 }
 
 // Copy data from src in RAM to dest in Arduino

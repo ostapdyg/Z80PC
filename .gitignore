@@ -28,3 +28,4 @@ ConfigurableVersion/basic/hexify.py
 FastVersion/basic/hexify.py
 FastVersion/platformio.ini
 ShowMemory/platformio.ini
+ConfigurableVersion/program.h
