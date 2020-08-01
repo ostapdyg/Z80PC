@@ -9,7 +9,7 @@
 
 #define program program_CUSTOM
 
-#define DEBUG_MODE (0)
+#define DEBUG_MODE (R|W)
 // #define DEBUG_MODE (0)
 #define IO_INT 0x04
 
@@ -545,8 +545,8 @@ void setup()
   clock_mode = CLK_TIMER;
   pinMode(EXT_CLOCK, INPUT_PULLUP);
   ZPC_Clock_Config();
-  ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
-  // ZPC_Clock_Change(CLK_MAINLOOP);
+  // ZPC_Clock_Start(); // Mode 0 by default (Arduino clock source)
+  ZPC_Clock_Change(CLK_BUTTON);
 
   ZPC_ProcStart();
 
